@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBuddy – Voice-Based Study & Dashboard System</title>
+    <meta name="description" content="Unified Voice-Based Study Assistance & Dashboard for All Students — Active Recall, Review Scheduling, Question Bank, and Task Tracking in one application.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Unified Styles -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon">
+            <i class="fa-solid fa-brain"></i>
+        </div>
+        <span class="brand-name">StudyBuddy</span>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" id="nav-dashboard" onclick="showView('dashboard'); return false;">
+            <i class="fa-solid fa-grid-2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-arena" onclick="showView('arena'); return false;">
+            <i class="fa-solid fa-microphone-lines"></i>
+            <span>Voice Practice</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-flashcards" onclick="showView('flashcards'); return false;">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Flashcards</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-materials" onclick="showView('materials'); return false;">
+            <i class="fa-solid fa-book-bookmark"></i>
+            <span>Review Materials</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-questions" onclick="showView('questions'); return false;">
+            <i class="fa-solid fa-circle-question"></i>
+            <span>Question Bank</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-schedule" onclick="showView('schedule'); return false;">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Review Schedule</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-tasks" onclick="showView('tasks'); return false;">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Tasks</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-analytics" onclick="showView('analytics'); return false;">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Analytics</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <!-- Active Voice Reader Pill -->
+        <div class="voice-reader-pill" onclick="openSettingsModal();" title="Change Voice Reader" style="margin:0 0 8px 8px;max-width:172px;">
+            <span class="voice-reader-pill-avatar" id="sidebarReaderAvatar">👨‍🏫</span>
+            <div style="display:flex;flex-direction:column;line-height:1.2;overflow:hidden;">
+                <span class="voice-reader-pill-name" id="sidebarReaderName">Prof. Dexter</span>
+                <span style="font-size:0.65rem;color:rgba(255,255,255,0.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Active Voice Reader</span>
+            </div>
+            <i class="fa-solid fa-sliders" style="color:rgba(255,255,255,0.3);font-size:0.7rem;margin-left:auto;"></i>
+        </div>
+        <a href="#" class="nav-item" id="nav-settings" onclick="openSettingsModal(); return false;">
+            <i class="fa-solid fa-headphones"></i>
+            <span>Voice Reader</span>
+        </a>
+        <a href="#" class="nav-item logout" id="nav-logout" onclick="handleLogoutClick(); return false;">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span id="logoutBtnLabel">Log Out</span>
+        </a>
+    </div>
+</aside>
+
+<!-- ============ MAIN WRAPPER ============ -->
+<div class="main-wrapper">
+
+    <!-- TOP HEADER -->
+    <header class="dash-header">
+        <div class="header-left-group">
+            <button class="mobile-menu-btn" id="btnToggleMobileSidebar" onclick="toggleSidebar();" title="Toggle Navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <!-- Dual Search: Keywords + Topic/Subject List (Addresses 40% vs 40% tie in Survey Section III) -->
+            <div class="header-search-dual" id="headerSearchContainer">
+                <div class="search-input-wrap">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="globalSearch" placeholder="Search keywords in notes & questions…" autocomplete="off">
+                </div>
+                <select id="headerSubjectFilter" class="header-subj-select" title="Select Topic / Subject from List">
+                    <option value="all">All Topics / Subjects</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Central Voice Status Pill -->
+        <div class="voice-status-pill" id="voiceStatusPill" style="cursor: pointer;" title="Voice Assistant Status">
+            <span class="status-indicator" id="statusDot"></span>
+            <span class="status-text" id="statusText">Voice Ready</span>
+            <i class="fa-solid fa-microphone-lines status-icon" id="statusWaveIcon"></i>
+        </div>
+
+        <div class="header-actions">
+            <!-- Main Action Buttons Cluster (Clean & Balanced) -->
+            <div class="header-btn-cluster">
+                <!-- Ask Study Question Button -->
+                <button class="btn btn-outline btn-sm header-action-btn" id="btnOpenAskStudyModal" onclick="openAskStudyModal();" title="Ask a study question by voice or text">
+                    <i class="fa-solid fa-comments"></i> <span class="hide-tablet-text">Ask Question</span>
+                </button>
+
+                <!-- Note Scanner Quick Launch -->
+                <button class="btn btn-outline btn-sm header-action-btn scanner-btn" onclick="openNoteScannerModal();" title="Note Scanner: Auto-generate specific Q&A reviewer from notes">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span class="hide-tablet-text">Note Scanner</span>
+                </button>
+
+                <!-- Quick Practice Action Button -->
+                <button class="btn btn-primary btn-sm header-action-btn practice-btn" onclick="showView('arena');" title="Enter Verbal Active Recall Practice Area">
+                    <i class="fa-solid fa-microphone"></i> <span class="hide-tablet-text">Practice Area</span>
+                </button>
+            </div>
+
+            <div class="header-separator"></div>
+
+            <!-- Utility Icons Cluster -->
+            <div class="header-utility-cluster">
+                <!-- Study Reminders & Cadence Button -->
+                <button class="icon-btn" id="btnOpenRemindersModal" onclick="openRemindersModal();" title="Study Reminders & Cadence">
+                    <i class="fa-solid fa-clock"></i>
+                </button>
+
+                <button class="icon-btn" id="btnNotifications" title="Notifications">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge" id="notifBadge">3</span>
+                </button>
+
+                <button class="icon-btn" id="btnSettingsHeader" title="Voice & System Settings" onclick="openSettingsModal();">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+
+            <!-- Profile Chip / Account Switcher -->
+            <div class="profile-chip" id="profileChip" title="Click to view profile or switch account" onclick="handleProfileChipClick();">
+                <div class="avatar" id="headerAvatar">RD</div>
+                <div class="profile-info hide-mobile">
+                    <span class="profile-name" id="headerName">Rhea Dumagat</span>
+                    <span class="profile-sub" id="headerYear">Student</span>
+                </div>
+                <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: var(--text-3);"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- ======== 1. DASHBOARD VIEW (DEDICATED APP WINDOW FRAME) ======== -->
+    <main class="dash-content dashboard-view" id="view-dashboard">
+        <div class="app-window-frame glass-panel">
+            <!-- Window Control Titlebar -->
+            <div class="app-window-header">
+                <div class="window-left-group">
+                    <div class="window-traffic-lights">
+                        <span class="light red"></span>
+                        <span class="light yellow"></span>
+                        <span class="light green"></span>
+                    </div>
+                    <div class="window-title-group">
+                        <h2 class="window-title"><i class="fa-solid fa-house-laptop" style="color:var(--primary-light);"></i> Study Hub &amp; Daily Overview</h2>
+                        <span class="window-subtitle">Active Recall Assistant, Prioritized Reviews &amp; Course Tracker for All Students</span>
+                    </div>
+                </div>
+                <div class="window-actions">
+                    <button class="btn btn-outline btn-sm" onclick="openNoteScannerModal();" style="border-color: rgba(192, 132, 252, 0.4); color: #c084fc;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Scan Notes
+                    </button>
+                    <button class="btn btn-outline btn-sm" onclick="showView('flashcards');" style="border-color: rgba(99, 102, 241, 0.4); color: #818cf8;">
+                        <i class="fa-solid fa-layer-group"></i> Flashcards
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="showView('arena');">
+                        <i class="fa-solid fa-microphone"></i> Practice Arena
+                    </button>
+                </div>
+            </div>
+
+            <!-- Two-Column Grid Frame -->
+            <div class="dashboard-window-grid" style="display: grid; grid-template-columns: 1fr 340px; gap: 1.75rem; align-items: start;">
+                <!-- LEFT COLUMN -->
+                <div class="content-left" style="min-width: 0;">
+
+                    <!-- Welcome Banner -->
+                    <section class="welcome-banner">
+                        <div class="welcome-text">
+                            <span class="welcome-date" id="welcomeDate">Loading date...</span>
+                            <h2 class="welcome-title" id="welcomeTitle">Welcome back, Student! 👋</h2>
+                            <p class="welcome-sub">Voice-based active recall study buddy designed for all students.</p>
+                        </div>
+                        <div class="weekly-goal-card">
+                            <div class="goal-header">
+                                <span class="goal-label"><i class="fa-solid fa-bullseye" style="color:#818cf8;"></i> Overall Mastery</span>
+                                <span class="goal-pct" id="weeklyGoalPct">0%</span>
+                            </div>
+                            <div class="progress-bar-wrap">
+                                <div class="progress-bar-fill" id="weeklyProgressFill" style="width: 0%;"></div>
+                            </div>
+                            <span class="goal-sub">Based on verified active recall attempts</span>
+                        </div>
+                    </section>
+
+                    <!-- My Courses -->
+                    <section class="dash-section">
+                        <div class="section-title-row">
+                            <h3 class="section-title">My Courses</h3>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <button class="btn-sm" onclick="showModal('dashSubjectModal');" style="background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:0.32rem 0.65rem;font-size:0.78rem;cursor:pointer;display:flex;align-items:center;gap:4px;">
+                                    <i class="fa-solid fa-plus"></i> Add Subject
+                                </button>
+                                <button class="btn-sm" onclick="showView('arena');" style="background:transparent;color:var(--primary-light);border:none;cursor:pointer;font-size:0.8rem;display:flex;align-items:center;gap:4px;">
+                                    Practice Arena <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="courses-grid" id="coursesGrid">
+                            <div class="course-card-skeleton"></div>
+                            <div class="course-card-skeleton"></div>
+                            <div class="course-card-skeleton"></div>
+                        </div>
+                    </section>
+
+                    <!-- Achievements -->
+                    <section class="dash-section">
+                        <div class="section-title-row">
+                            <h3 class="section-title">Achievements</h3>
+                            <a href="#" class="see-all-link" onclick="showView('analytics'); return false;">See Analytics <i class="fa-solid fa-chevron-right"></i></a>
+                        </div>
+                        <div class="achievements-grid" id="achievementsGrid"></div>
+                    </section>
+
+                </div>
+
+                <!-- RIGHT COLUMN (Review Schedule & Review Calendar Only) -->
+                <div class="content-right" style="min-width: 0;">
+
+                    <!-- Schedule Calendar -->
+                    <section class="dash-section calendar-section">
+                        <div class="section-title-row">
+                            <h3 class="section-title">Review Schedule</h3>
+                            <span style="font-size:0.7rem;padding:2px 8px;border-radius:100px;background:rgba(99,102,241,0.15);color:#818cf8;font-weight:600;">Calendar</span>
+                        </div>
+                        <div class="mini-calendar" id="miniCalendar">
+                            <div class="cal-nav">
+                                <button class="cal-nav-btn" id="calPrev"><i class="fa-solid fa-chevron-left"></i></button>
+                                <span class="cal-month-label" id="calMonthLabel">October 2026</span>
+                                <button class="cal-nav-btn" id="calNext"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                            <div class="cal-weekdays">
+                                <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+                            </div>
+                            <div class="cal-days" id="calDays"></div>
+                        </div>
+                    </section>
+
+                    <!-- What to Review First Panel (Prioritized Queue & Status) -->
+                    <section class="dash-section">
+                        <div class="section-title-row">
+                            <div>
+                                <h3 class="section-title"><i class="fa-solid fa-arrows-rotate" style="color:#f59e0b;font-size:0.95rem;"></i> What to Review First</h3>
+                                <p style="font-size:0.72rem;color:var(--text-3);margin-top:2px;">Prioritized review queue &amp; mastery status</p>
+                            </div>
+                            <a href="#" class="see-all-link" onclick="showView('arena'); return false;">Practice <i class="fa-solid fa-chevron-right"></i></a>
+                        </div>
+                        <div class="review-schedule-panel" id="reviewSchedulePanel">
+                            <!-- Populated by JS: subjects sorted with what to review first & status -->
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ======== 2. VOICE PRACTICE ARENA (DEDICATED APP WINDOW FRAME) ======== -->
+    <main class="dash-content arena-view" id="view-arena" style="display:none;">
+        <div class="app-window-frame glass-panel">
+            <!-- Window Control Titlebar -->
+            <div class="app-window-header">
+                <div class="window-left-group">
+                    <div class="window-traffic-lights">
+                        <span class="light red"></span>
+                        <span class="light yellow"></span>
+                        <span class="light green"></span>
+                    </div>
+                    <div class="window-title-group">
+                        <h2 class="window-title"><i class="fa-solid fa-microphone-lines" style="color:var(--cyan-accent);"></i> Verbal Active Recall Arena</h2>
+                        <span class="window-subtitle">Grounded Practice with Voice Speech-to-Text, Instant Feedback &amp; Audio Explanations</span>
+                    </div>
+                </div>
+                <div class="window-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnToggleArenaAudio" onclick="toggleArenaAudio();" title="Toggle Assistant Audio Feedback">
+                        <i class="fa-solid fa-volume-high" id="arenaAudioIcon"></i>
+                        <span id="arenaAudioLabel">Audio: ON</span>
+                    </button>
+                    <button class="btn btn-primary btn-sm" id="btnStartSession">
+                        <i class="fa-solid fa-play"></i> Start Session
+                    </button>
+                </div>
+            </div>
+
+            <div class="arena-layout" style="max-width: 100%;">
+                
+                <!-- Arena Control Bar -->
+                <div class="arena-controls card glass-panel" style="margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+                    <div class="control-group">
+                        <label for="studySubjectSelect"><i class="fa-solid fa-layer-group"></i> Target Subject:</label>
+                        <select id="studySubjectSelect" class="form-select">
+                            <option value="all">All Subjects</option>
+                        </select>
+                    </div>
+
+                <div class="control-group">
+                    <label for="studyModeSelect"><i class="fa-solid fa-bullseye"></i> Practice Mode:</label>
+                    <select id="studyModeSelect" class="form-select">
+                        <option value="all">Mixed Active Recall (Random)</option>
+                        <option value="weak">Spaced Repetition (Weak / Unmastered First)</option>
+                        <option value="quiz5">Practice Quiz (5 Questions) ★ Top Survey Choice</option>
+                        <option value="quiz10">Daily Comprehensive Quiz (10 Questions)</option>
+                        <option value="new">Unpracticed Flashcards Only</option>
+                    </select>
+                </div>
+
+                <!-- Preferred Audio Length (53.3% Survey Preference: 1-3 Minutes) -->
+                <div class="control-group">
+                    <label for="arenaAudioLength"><i class="fa-solid fa-stopwatch"></i> Audio Length:</label>
+                    <select id="arenaAudioLength" class="form-select" title="Preferred Audio Explanation Length">
+                        <option value="concise" selected>Concise (1–3 min) ★ Survey Favorite</option>
+                        <option value="brief">Brief Flash (&lt; 1 min)</option>
+                        <option value="detailed">Detailed Deep Dive (3–5 min)</option>
+                    </select>
+                </div>
+
+                <!-- Silent Mode / Audio Output Toggle (Section I: Audio as Optional Mode) -->
+                <div class="control-actions" style="display:flex; gap:0.6rem; align-items:center;">
+                    <button type="button" class="btn btn-outline" id="btnToggleArenaAudio" onclick="toggleArenaAudio();" title="Toggle Assistant Audio Feedback">
+                        <i class="fa-solid fa-volume-high" id="arenaAudioIcon"></i>
+                        <span id="arenaAudioLabel">Audio: ON</span>
+                    </button>
+                    <button class="btn btn-primary" id="btnStartSession">
+                        <i class="fa-solid fa-play"></i> Start Session
+                    </button>
+                </div>
+            </div>
+
+            <!-- Arena Question & Voice Stage -->
+            <div class="arena-stage">
+
+                <!-- Audio Wave Visualizer Canvas -->
+                <div class="visualizer-container">
+                    <canvas id="voiceVisualizer" width="800" height="70"></canvas>
+                    <div class="visualizer-label" id="visualizerLabel">Ready to begin active recall</div>
+                </div>
+
+                <!-- Current Question Card -->
+                <div class="card question-card glass-panel" id="currentQuestionCard">
+                    <div class="q-header">
+                        <div class="q-meta">
+                            <span class="badge badge-subject" id="qSubjectBadge">IT 101</span>
+                            <span class="badge badge-type" id="qTypeBadge">Flashcard</span>
+                            <span class="badge badge-diff" id="qDiffBadge">Medium</span>
+                            <span class="badge badge-grounded" id="qGroundedBadge" title="Question is 100% grounded in uploaded course notes">
+                                <i class="fa-solid fa-shield-halved"></i> 100% Grounded
+                            </span>
+                        </div>
+                        <div class="q-counter" id="qCounterText">Question 1 of 5</div>
+                    </div>
+
+                    <div class="q-body">
+                        <h2 class="question-text" id="qText">
+                            Select a subject and click "Start Session" to begin verbal active recall.
+                        </h2>
+                    </div>
+
+                    <div class="q-actions" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn btn-secondary btn-sm" id="btnSpeakQuestion" title="Read Question Aloud">
+                                <i class="fa-solid fa-volume-high"></i> Speak Question (TTS)
+                            </button>
+                            <button class="btn btn-ghost btn-sm" id="btnVerifyQuestionSource" onclick="openQuestionSourceVerification();" title="Verify Question Against Uploaded Notes (86.7% Survey Priority)">
+                                <i class="fa-solid fa-file-circle-check"></i> Verify Source Excerpt
+                            </button>
+                        </div>
+                        <button class="btn btn-ghost btn-sm" id="btnSkipQuestion" title="Skip to Next Question">
+                            <i class="fa-solid fa-forward-step"></i> Skip
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Voice/Text Interaction Area (Multimodal Input: Typing + Speaking 80% Preference) -->
+                <div class="card interaction-card glass-panel" id="interactionCard">
+                    
+                    <!-- Modality Selector -->
+                    <div class="input-modality-tabs" style="display:flex;gap:8px;margin-bottom:14px;justify-content:center;">
+                        <button type="button" class="btn btn-sm btn-outline active" id="btnModalityVoice" onclick="setArenaInputMode('voice');" style="border-radius:20px;font-size:0.8rem;padding:4px 14px;">
+                            <i class="fa-solid fa-microphone"></i> Voice Speech-to-Text
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline" id="btnModalityKeyboard" onclick="setArenaInputMode('keyboard');" style="border-radius:20px;font-size:0.8rem;padding:4px 14px;">
+                            <i class="fa-solid fa-keyboard"></i> Direct Keyboard Typing
+                        </button>
+                    </div>
+
+                    <!-- Interactive Mic Button with Ripples -->
+                    <div class="mic-stage" id="arenaMicStage">
+                        <div class="mic-ripple-ring" id="micRipple1"></div>
+                        <div class="mic-ripple-ring" id="micRipple2"></div>
+                        <button class="mic-trigger-btn" id="btnMicTrigger" title="Click to Speak Answer">
+                            <i class="fa-solid fa-microphone" id="micIcon"></i>
+                        </button>
+                    </div>
+                    <div class="mic-instruction" id="micInstruction">Click the microphone to start speaking your answer</div>
+
+                    <!-- Live Transcription / Direct Input Box -->
+                    <div class="transcription-container">
+                        <div class="transcription-header">
+                            <span id="transcriptionHeaderLabel"><i class="fa-solid fa-comment-dots"></i> Speech-to-Text & Typed Answer:</span>
+                            <button class="btn-text-action" id="btnClearTranscription"><i class="fa-solid fa-rotate-left"></i> Clear</button>
+                        </div>
+                        <div class="transcription-box" id="transcriptionDisplay" contenteditable="true" placeholder="Your spoken answer appears here in real-time. You can also type or edit directly..."></div>
+                    </div>
+
+                    <!-- Submission Controls -->
+                    <div class="submit-action-bar">
+                        <button class="btn btn-success btn-lg" id="btnSubmitAnswer" disabled>
+                            <i class="fa-solid fa-check-circle"></i> Evaluate Answer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Evaluation Feedback Card -->
+                <div class="card feedback-card glass-panel" id="feedbackCard" style="display: none;">
+                    
+                    <!-- Verdict Banner (Correct vs Wrong) -->
+                    <div class="verdict-banner" id="verdictBanner">
+                        <div class="verdict-tag" id="verdictTag">
+                            <i class="fa-solid fa-circle-check" id="verdictIcon"></i>
+                            <span id="verdictLabel">CORRECT!</span>
+                        </div>
+                        <div class="voice-memo-box">
+                            <div class="voice-memo-header">
+                                <span><i class="fa-solid fa-microphone-lines"></i> Spoken Voice Memo:</span>
+                                <button class="btn btn-secondary btn-sm" id="btnSpeakVoiceMemo">
+                                    <i class="fa-solid fa-volume-high"></i> Replay Voice Memo
+                                </button>
+                            </div>
+                            <p class="voice-memo-text" id="voiceMemoText">"Correct! Great explanation..."</p>
+                        </div>
+                    </div>
+
+                    <!-- Prominent Correct Answer Callout -->
+                    <div class="correct-answer-callout" id="correctAnswerCallout">
+                        <div class="callout-header"><i class="fa-solid fa-book-open"></i> Correct Answer from Reviewer:</div>
+                        <div class="callout-body" id="calloutExpectedAnswer"></div>
+                    </div>
+
+                    <!-- Grounded Source Material Verification (Addresses 86.7% survey finding) -->
+                    <div class="ai-verification-card" style="margin: 1rem 0; background: rgba(15,23,42,0.65); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 0.9rem 1.1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 6px;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-shield-check"></i> Grounded in Uploaded Course Material
+                            </span>
+                            <span style="font-size: 0.72rem; background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 8px; border-radius: 100px; font-weight: 600;">
+                                86.7% Verification Standard
+                            </span>
+                        </div>
+                        <p style="font-size: 0.78rem; color: var(--text-2); margin-bottom: 0.5rem;">
+                            Question & rubric anchored strictly in: <strong id="feedbackSourceTitle" style="color: var(--text-1);">Uploaded Course Notes</strong>.
+                        </p>
+                        <button type="button" class="btn btn-outline btn-xs" id="btnToggleSourceExcerpt" onclick="toggleSourceExcerpt();" style="font-size: 0.75rem; padding: 3px 10px;">
+                            <i class="fa-solid fa-eye"></i> <span id="toggleExcerptBtnLabel">Compare with Original Notes Excerpt</span>
+                        </button>
+                        <div class="source-excerpt-drawer" id="sourceExcerptDrawer" style="display: none; margin-top: 0.6rem;">
+                            <div style="font-size: 0.72rem; color: var(--text-3); font-weight: 600; margin-bottom: 3px;">Original Uploaded Notes Passage:</div>
+                            <blockquote id="feedbackSourceSnippet" style="font-size: 0.8rem; color: var(--text-2); background: rgba(0,0,0,0.3); border-left: 3px solid var(--primary); padding: 8px 12px; border-radius: 6px; line-height: 1.45; margin: 0;"></blockquote>
+                        </div>
+                    </div>
+
+                    <div class="feedback-header">
+                        <div class="score-display">
+                            <div class="score-dial" id="scoreDial">
+                                <span class="score-number" id="scoreNumber">0</span>
+                                <span class="score-percent">%</span>
+                            </div>
+                            <div class="score-label-group">
+                                <h3 class="score-title" id="scoreTitle">Needs Review</h3>
+                                <p class="score-subtitle" id="scoreSubtitle">Active recall evaluated against reviewer notes</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="feedback-body">
+                        <div class="feedback-text-box">
+                            <h4><i class="fa-solid fa-lightbulb"></i> Explanatory Feedback:</h4>
+                            <p id="feedbackTextContent">Feedback will appear here.</p>
+                        </div>
+
+                        <div class="missing-concepts-box" id="missingConceptsBox" style="display:none;">
+                            <h4><i class="fa-solid fa-triangle-exclamation"></i> Concepts to Highlight:</h4>
+                            <div class="concept-tags" id="missingConceptsList"></div>
+                        </div>
+                    </div>
+
+                    <div class="feedback-footer">
+                        <button class="btn btn-outline" id="btnRetryQuestion">
+                            <i class="fa-solid fa-rotate"></i> Practice Again
+                        </button>
+                        <button class="btn btn-primary" id="btnNextQuestion">
+                            <span>Next Question</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- ======== 2B. INTERACTIVE FLASHCARDS VIEW (DEDICATED APP WINDOW FRAME - SEPARATE FROM VOICE ARENA) ======== -->
+    <main class="dash-content flashcards-view" id="view-flashcards" style="display:none;">
+        <div class="app-window-frame glass-panel">
+            <!-- Window Control Titlebar -->
+            <div class="app-window-header">
+                <div class="window-left-group">
+                    <div class="window-traffic-lights">
+                        <span class="light red"></span>
+                        <span class="light yellow"></span>
+                        <span class="light green"></span>
+                    </div>
+                    <div class="window-title-group">
+                        <h2 class="window-title"><i class="fa-solid fa-layer-group" style="color:#c084fc;"></i> Interactive Flashcards &amp; Spaced Recall</h2>
+                        <span class="window-subtitle">Visual Active Recall with 3D Flip Cards, Self-Grading Spaced Repetition &amp; Deck Tracking</span>
+                    </div>
+                </div>
+                <div class="window-actions" style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+                    <select id="fcSubjectFilter" class="form-select" onchange="loadFlashcardDeck();" style="min-width:140px;font-size:0.8rem;padding:5px 8px;">
+                        <option value="all">All Subjects</option>
+                    </select>
+                    <select id="fcModeFilter" class="form-select" onchange="loadFlashcardDeck();" style="min-width:130px;font-size:0.8rem;padding:5px 8px;">
+                        <option value="all">All Cards</option>
+                        <option value="unmastered">Needs Review</option>
+                        <option value="mastered">Mastered Only</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="shuffleFlashcards();" title="Shuffle Deck">
+                        <i class="fa-solid fa-shuffle"></i> Shuffle
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="openNoteScannerModal();" title="Scan new notes into flashcards">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Scan Notes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Flashcard Arena Container -->
+            <div class="flashcards-stage" style="max-width: 780px; margin: 0 auto; padding: 0.5rem 0 1.5rem;">
+                
+                <!-- Deck Progress Bar & Header -->
+                <div class="fc-progress-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; font-size: 0.82rem; color: var(--text-2);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="badge" id="fcSubjectBadge" style="background: rgba(192,132,252,0.15); color: #c084fc; font-weight:700; padding: 3px 8px; border-radius: 6px;">Subject</span>
+                        <span id="fcCounterText" style="font-weight: 600; color: #fff;">Card 1 of 10</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span id="fcMasteredStats" style="font-size: 0.78rem; color: #10b981; font-weight:600;"><i class="fa-solid fa-circle-check"></i> 0 Mastered</span>
+                        <button class="btn btn-ghost btn-sm" onclick="speakCurrentFlashcard();" id="btnSpeakFc" title="Listen with Voice Reader" style="padding: 3px 9px; font-size: 0.78rem; border-radius: 100px; border: 1px solid rgba(255,255,255,0.15);">
+                            <i class="fa-solid fa-volume-high"></i> Listen
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-bar-wrap" style="height: 6px; border-radius: 6px; background: rgba(255,255,255,0.08); margin-bottom: 1.5rem; overflow: hidden;">
+                    <div class="progress-bar-fill" id="fcProgressBar" style="width: 10%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #ec4899); transition: width 0.3s ease;"></div>
+                </div>
+
+                <!-- 3D Flippable Flashcard Card -->
+                <div class="flashcard-scene" onclick="flipFlashcard();" style="perspective: 1200px; cursor: pointer;">
+                    <div class="flashcard-card" id="flashcardElement">
+                        
+                        <!-- FRONT OF CARD (Question) -->
+                        <div class="flashcard-face flashcard-front">
+                            <div class="fc-card-top">
+                                <span class="fc-side-label"><i class="fa-solid fa-circle-question"></i> QUESTION PROMPT</span>
+                                <span class="fc-hint"><i class="fa-solid fa-hand-pointer"></i> Click card or press Space to flip</span>
+                            </div>
+                            <div class="fc-card-body">
+                                <p class="fc-question-text" id="fcFrontQuestion">Loading questions from course notes...</p>
+                            </div>
+                            <div class="fc-card-bottom">
+                                <span class="fc-difficulty-badge" id="fcDifficultyBadge">Medium</span>
+                                <span class="fc-times-badge" id="fcTimesBadge"><i class="fa-solid fa-repeat"></i> Practiced 0 times</span>
+                            </div>
+                        </div>
+
+                        <!-- BACK OF CARD (Answer & Key Concepts) -->
+                        <div class="flashcard-face flashcard-back">
+                            <div class="fc-card-top">
+                                <span class="fc-side-label" style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> MODEL ANSWER</span>
+                                <span class="fc-hint"><i class="fa-solid fa-hand-pointer"></i> Click card to flip back</span>
+                            </div>
+                            <div class="fc-card-body">
+                                <p class="fc-answer-text" id="fcBackAnswer">Answer text will appear here.</p>
+                                <div class="fc-concepts-wrap" id="fcConceptsWrap" style="margin-top: 1.25rem;">
+                                    <span style="font-size: 0.72rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; display:block; margin-bottom: 5px;">Rubric Keywords / Concepts:</span>
+                                    <div class="fc-concept-tags" id="fcConceptTags"></div>
+                                </div>
+                            </div>
+                            <div class="fc-card-bottom">
+                                <span class="fc-grounded-badge"><i class="fa-solid fa-shield-halved"></i> Grounded in Course Reviewer</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Self-Grading Action Bar -->
+                <div class="fc-grading-bar" id="fcGradingBar" style="margin-top: 1.75rem; text-align: center;">
+                    <div style="font-size: 0.78rem; color: var(--text-2); margin-bottom: 0.75rem; font-weight: 500;">Self-Grade Your Active Recall:</div>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" class="fc-grade-btn grade-again" onclick="rateCurrentFlashcard('again');" title="Recall failed (Score 40%)">
+                            <span class="grade-label">🔴 Again</span>
+                            <span class="grade-interval">&lt; 1 min</span>
+                        </button>
+                        <button type="button" class="fc-grade-btn grade-hard" onclick="rateCurrentFlashcard('hard');" title="Struggled to recall (Score 65%)">
+                            <span class="grade-label">🟠 Hard</span>
+                            <span class="grade-interval">2 days</span>
+                        </button>
+                        <button type="button" class="fc-grade-btn grade-good" onclick="rateCurrentFlashcard('good');" title="Recalled with effort (Score 85%)">
+                            <span class="grade-label">🔵 Good</span>
+                            <span class="grade-interval">4 days</span>
+                        </button>
+                        <button type="button" class="fc-grade-btn grade-easy" onclick="rateCurrentFlashcard('easy');" title="Recalled immediately (Score 100%)">
+                            <span class="grade-label">🟢 Easy</span>
+                            <span class="grade-interval">7 days</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Deck Navigation Controls -->
+                <div class="fc-nav-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.75rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                    <button class="btn btn-ghost" id="btnFcPrev" onclick="navigateFlashcard(-1);" title="Previous Card (Left Arrow)">
+                        <i class="fa-solid fa-arrow-left"></i> Previous
+                    </button>
+                    <button class="btn btn-outline" id="btnFcFlip" onclick="flipFlashcard();" style="border-radius: 100px; padding: 0.45rem 1.4rem;">
+                        <i class="fa-solid fa-rotate"></i> Flip Card (Space)
+                    </button>
+                    <button class="btn btn-primary" id="btnFcNext" onclick="navigateFlashcard(1);" title="Next Card (Right Arrow)">
+                        Next <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- ======== 3. REVIEW MATERIALS VIEW (DEDICATED APP WINDOW FRAME) ======== -->
+    <main class="dash-content materials-view" id="view-materials" style="display:none;">
+        <div class="app-window-frame glass-panel">
+            <!-- Window Control Titlebar -->
+            <div class="app-window-header">
+                <div class="window-left-group">
+                    <div class="window-traffic-lights">
+                        <span class="light red"></span>
+                        <span class="light yellow"></span>
+                        <span class="light green"></span>
+                    </div>
+                    <div class="window-title-group">
+                        <h2 class="window-title"><i class="fa-solid fa-book-bookmark" style="color:#818cf8;"></i> Course Review Materials &amp; Notes</h2>
+                        <span class="window-subtitle">Upload Handouts &amp; Lecture Notes (PDF/TXT/DOCX) to Synthesize Grounded Flashcards</span>
+                    </div>
+                </div>
+                <div class="window-actions">
+                    <button class="btn btn-outline btn-sm" onclick="openNoteScannerModal();" style="border-color: rgba(192, 132, 252, 0.4); color: #c084fc;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Note Scanner
+                    </button>
+                    <button class="btn btn-outline btn-sm" onclick="showModal('dashSubjectModal');">
+                        <i class="fa-solid fa-folder-plus"></i> Add Subject
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="showModal('uploadModal');">
+                        <i class="fa-solid fa-file-circle-plus"></i> Upload Reviewer
+                    </button>
+                </div>
+            </div>
+
+            <div class="materials-grid" id="materialsGrid">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </main>
+
+    <!-- ======== 4. QUESTION BANK VIEW (DEDICATED APP WINDOW FRAME) ======== -->
+    <main class="dash-content questions-view" id="view-questions" style="display:none;">
+        <div class="app-window-frame glass-panel">
+            <!-- Window Control Titlebar -->
+            <div class="app-window-header">
+                <div class="window-left-group">
+                    <div class="window-traffic-lights">
+                        <span class="light red"></span>
+                        <span class="light yellow"></span>
+                        <span class="light green"></span>
+                    </div>
+                    <div class="window-title-group">
+                        <h2 class="window-title"><i class="fa-solid fa-circle-question" style="color:#f59e0b;"></i> Active Recall Question Bank</h2>
+                        <span class="window-subtitle">All Synthesized Flashcards &amp; Rubrics Grounded in Uploaded Materials</span>
+                    </div>
+                </div>
+                <div class="window-actions" style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+                    <select id="qbSubjectFilter" class="form-select" style="min-width:140px;font-size:0.8rem;padding:5px 8px;">
+                        <option value="all">All Subjects</option>
+                    </select>
+                    <select id="qbStatusFilter" class="form-select" style="min-width:130px;font-size:0.8rem;padding:5px 8px;">
+                        <option value="all">All Statuses</option>
+                        <option value="weak">Needs Practice</option>
+                        <option value="mastered">Mastered Only</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="showModal('addQuestionModal');">
+                        <i class="fa-solid fa-plus"></i> Add Question
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Question</th>
+                            <th>Expected Source Answer</th>
+                            <th>Type</th>
+                            <th>Last Score</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="questionTableBody">
+                        <!-- Dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- ======== 5. CLASS & REVIEW SCHEDULE VIEW (ORGANIZED TIMETABLE TABLE WINDOW) ======== -->
+    <main class="dash-content schedule-view" id="view-schedule" style="display:none;">
+        <div class="app-window-frame glass-panel">
+            <!-- Window Control Titlebar -->
+            <div class="app-window-header">
+                <div class="window-left-group">
+                    <div class="window-traffic-lights">
+                        <span class="light red"></span>
+                        <span class="light yellow"></span>
+                        <span class="light green"></span>
+                    </div>
+                    <div class="window-title-group">
+                        <h2 class="window-title"><i class="fa-solid fa-calendar-days" style="color:var(--primary-light);"></i> Academic & Spaced Review Timetable</h2>
+                        <span class="window-subtitle">Weekly Lecture Periods, Lab Sessions & Prioritized Active Recall Blocks</span>
+                    </div>
+                </div>
+                <div class="window-actions">
+                    <button class="btn btn-outline btn-sm" onclick="openAddScheduleModal();">
+                        <i class="fa-solid fa-calendar-plus"></i> Add Class / Review Slot
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="showView('arena');">
+                        <i class="fa-solid fa-play"></i> Start Today's Review
+                    </button>
+                </div>
+            </div>
+
+            <!-- Timetable Meta / Filter Toolbar -->
+            <div class="timetable-toolbar">
+                <div class="toolbar-stat-pills">
+                    <div class="stat-pill"><i class="fa-solid fa-graduation-cap" style="color:var(--primary-light);"></i> <span>Semester Timetable</span></div>
+                    <div class="stat-pill"><i class="fa-solid fa-clock" style="color:var(--success);"></i> <span id="timetableWeeklyHoursBadge">24.5 Hours / Week</span></div>
+                    <div class="stat-pill"><i class="fa-solid fa-brain" style="color:#f59e0b;"></i> <span id="timetableReviewSlotsBadge">5 Active Recall Blocks</span></div>
+                </div>
+                <div class="toolbar-filter-controls">
+                    <label for="timetableSubjectFilter" style="font-size:0.78rem;color:var(--text-3);"><i class="fa-solid fa-filter"></i> Subject:</label>
+                    <select id="timetableSubjectFilter" class="form-select" onchange="filterTimetableBySubject();" style="font-size:0.8rem;padding:4px 10px;border-radius:6px;min-width:140px;">
+                        <option value="all">All Enrolled Subjects</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- The Organized Timetable Table Frame -->
+            <div class="timetable-container">
+                <table class="timetable-table" id="timetableTable">
+                    <thead>
+                        <tr>
+                            <th class="time-header-cell"><i class="fa-solid fa-clock"></i> Period / Time</th>
+                            <th class="day-header-cell" data-day="0">Monday <span class="day-sub" id="schedDay0Date"></span></th>
+                            <th class="day-header-cell" data-day="1">Tuesday <span class="day-sub" id="schedDay1Date"></span></th>
+                            <th class="day-header-cell" data-day="2">Wednesday <span class="day-sub" id="schedDay2Date"></span></th>
+                            <th class="day-header-cell" data-day="3">Thursday <span class="day-sub" id="schedDay3Date"></span></th>
+                            <th class="day-header-cell" data-day="4">Friday <span class="day-sub" id="schedDay4Date"></span></th>
+                            <th class="day-header-cell" data-day="5">Saturday <span class="day-sub" id="schedDay5Date"></span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetableBody">
+                        <!-- Populated dynamically with academic periods & review slots -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Timetable Legend & Spaced Repetition Note -->
+            <div class="timetable-footer-legend">
+                <div class="legend-items">
+                    <span class="legend-chip blue"><span class="chip-dot"></span> IT 101 – Comp Fund</span>
+                    <span class="legend-chip purple"><span class="chip-dot"></span> IT 102 – Prog Logic</span>
+                    <span class="legend-chip green"><span class="chip-dot"></span> IT 103 – Discrete Structures</span>
+                    <span class="legend-chip orange"><span class="chip-dot"></span> Math 1 – Calculus</span>
+                    <span class="legend-chip amber"><span class="chip-dot"></span> Active Recall Drill (Voice)</span>
+                </div>
+                <div class="legend-note">
+                    <i class="fa-solid fa-circle-info"></i> Click <strong>"Practice"</strong> on any subject block to launch its grounded verbal active recall session.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ======== 6. TASKS VIEW (DEDICATED TASK WINDOW FRAME) ======== -->
+    <main class="dash-content tasks-view" id="view-tasks" style="display:none;">
+        <div class="app-window-frame glass-panel">
+            <!-- Window Control Titlebar -->
+            <div class="app-window-header">
+                <div class="window-left-group">
+                    <div class="window-traffic-lights">
+                        <span class="light red"></span>
+                        <span class="light yellow"></span>
+                        <span class="light green"></span>
+                    </div>
+                    <div class="window-title-group">
+                        <h2 class="window-title"><i class="fa-solid fa-list-check" style="color:var(--cyan-accent);"></i> Academic Task Dashboard</h2>
+                        <span class="window-subtitle">Organize coursework, lab reports, review targets &amp; deadlines in a structured table</span>
+                    </div>
+                </div>
+                <div class="window-actions task-header-actions">
+                    <!-- View Mode Switcher: Table View (Default) vs Kanban Board -->
+                    <div class="task-view-switcher" role="group" aria-label="Task layout switcher">
+                        <button type="button" class="view-toggle-btn active" id="btnTaskViewTable" onclick="setTaskViewMode('table');" title="Table View">
+                            <i class="fa-solid fa-table-list"></i> <span>Table</span>
+                        </button>
+                        <button type="button" class="view-toggle-btn" id="btnTaskViewBoard" onclick="setTaskViewMode('board');" title="Kanban Board View">
+                            <i class="fa-solid fa-columns"></i> <span>Board</span>
+                        </button>
+                    </div>
+
+                    <button class="btn btn-outline btn-sm btn-clear-done" onclick="clearCompletedTasks();" title="Clear all completed tasks">
+                        <i class="fa-solid fa-broom"></i> <span>Clear Done</span>
+                    </button>
+                    <button class="btn btn-primary btn-sm btn-new-task" id="btnAddTask" title="Create a new task">
+                        <i class="fa-solid fa-plus"></i> <span>New Task</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Task Stats Strip (Interactive Metric Cards) -->
+            <div class="task-stats-row">
+                <div class="task-stat-card active-filter" id="statCardTotal" onclick="filterTasksByStatus('all');" title="Click to view all tasks">
+                    <div class="task-stat-icon blue"><i class="fa-solid fa-layer-group"></i></div>
+                    <div class="task-stat-info">
+                        <span class="stat-num" id="taskStatTotal">0</span>
+                        <span class="stat-lbl">Total Tasks</span>
+                    </div>
+                </div>
+                <div class="task-stat-card" id="statCardTodo" onclick="filterTasksByStatus('todo');" title="Click to view To-Do tasks">
+                    <div class="task-stat-icon purple"><i class="fa-regular fa-circle-dot"></i></div>
+                    <div class="task-stat-info">
+                        <span class="stat-num" id="taskStatTodo" style="color:var(--primary-light);">0</span>
+                        <span class="stat-lbl">To-Do</span>
+                    </div>
+                </div>
+                <div class="task-stat-card" id="statCardInProgress" onclick="filterTasksByStatus('inprogress');" title="Click to view In-Progress tasks">
+                    <div class="task-stat-icon orange"><i class="fa-solid fa-spinner fa-spin-pulse"></i></div>
+                    <div class="task-stat-info">
+                        <span class="stat-num" id="taskStatInProgress" style="color:var(--warning);">0</span>
+                        <span class="stat-lbl">In Progress</span>
+                    </div>
+                </div>
+                <div class="task-stat-card" id="statCardDone" onclick="filterTasksByStatus('done');" title="Click to view Completed tasks">
+                    <div class="task-stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="task-stat-info">
+                        <span class="stat-num" id="taskStatDone" style="color:var(--success);">0</span>
+                        <span class="stat-lbl">Completed</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clean, Uncrowded Controls Bar -->
+            <div class="task-controls-bar">
+                <div class="task-filter-left">
+                    <div class="task-filter-group" role="tablist">
+                        <button class="task-filter-btn active" data-filter="all">All <span class="pill-count" id="filterCountAll">0</span></button>
+                        <button class="task-filter-btn" data-filter="todo">To-Do <span class="pill-count" id="filterCountTodo">0</span></button>
+                        <button class="task-filter-btn" data-filter="inprogress">In Progress <span class="pill-count" id="filterCountInProgress">0</span></button>
+                        <button class="task-filter-btn" data-filter="done">Completed <span class="pill-count" id="filterCountDone">0</span></button>
+                    </div>
+                </div>
+                <div class="task-filter-right">
+                    <div class="task-search-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="taskSearchInput" placeholder="Search tasks by name or notes…" autocomplete="off">
+                        <button type="button" class="task-search-clear" id="btnTaskSearchClear" style="display:none;" onclick="clearTaskSearch();" title="Clear search">&times;</button>
+                    </div>
+                    <div class="task-select-wrap">
+                        <i class="fa-solid fa-book-bookmark select-icon"></i>
+                        <select class="task-filter-select" id="taskSubjectFilter">
+                            <option value="all">All Subjects</option>
+                        </select>
+                    </div>
+                    <div class="task-select-wrap">
+                        <i class="fa-solid fa-arrow-up-wide-short select-icon"></i>
+                        <select class="task-filter-select" id="taskPriorityFilter">
+                            <option value="all">All Priorities</option>
+                            <option value="high">High Priority</option>
+                            <option value="medium">Medium Priority</option>
+                            <option value="low">Low Priority</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. TABLE VIEW (PRIMARY NEAT ARRANGEMENT) -->
+            <div class="task-table-container" id="taskTableView">
+                <div class="task-table-wrapper">
+                    <table class="task-neat-table" id="taskNeatTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 52px; text-align: center;">Status</th>
+                                <th style="min-width: 260px;">Task Title &amp; Details</th>
+                                <th style="width: 140px;">Subject</th>
+                                <th style="width: 130px;">Type</th>
+                                <th style="width: 150px;">Due Date</th>
+                                <th style="width: 110px;">Priority</th>
+                                <th style="width: 120px; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Empty State -->
+                <div class="task-empty-state" id="taskEmptyState" style="display: none;">
+                    <div class="empty-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+                    <h3>No tasks found</h3>
+                    <p id="taskEmptyMsg">All caught up! Or try adjusting your filters above.</p>
+                    <button class="btn btn-primary btn-sm" onclick="showModal('taskModal');" style="margin-top: 10px;">
+                        <i class="fa-solid fa-plus"></i> Create New Task
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. KANBAN BOARD VIEW (SECONDARY TOGGLABLE VIEW) -->
+            <div class="task-board-container" id="taskBoardView" style="display: none;">
+                <div class="task-board" id="taskBoard">
+                    <div class="task-board-col" id="col-todo">
+                        <div class="board-col-header">
+                            <div class="col-title-wrap">
+                                <span class="status-indicator-dot dot-todo"></span>
+                                <span class="col-title">To-Do</span>
+                            </div>
+                            <span class="col-count-badge" id="count-todo">0</span>
+                        </div>
+                        <div class="board-col-body" id="cards-todo"></div>
+                    </div>
+                    <div class="task-board-col" id="col-inprogress">
+                        <div class="board-col-header">
+                            <div class="col-title-wrap">
+                                <span class="status-indicator-dot dot-inprogress"></span>
+                                <span class="col-title">In Progress</span>
+                            </div>
+                            <span class="col-count-badge" id="count-inprogress">0</span>
+                        </div>
+                        <div class="board-col-body" id="cards-inprogress"></div>
+                    </div>
+                    <div class="task-board-col" id="col-done">
+                        <div class="board-col-header">
+                            <div class="col-title-wrap">
+                                <span class="status-indicator-dot dot-done"></span>
+                                <span class="col-title">Completed</span>
+                            </div>
+                            <span class="col-count-badge" id="count-done">0</span>
+                        </div>
+                        <div class="board-col-body" id="cards-done"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ======== 7. ANALYTICS VIEW (DEDICATED MASTERY INTELLIGENCE WINDOW FRAME) ======== -->
+    <main class="dash-content" id="view-analytics" style="display:none;">
+        <div class="app-window-frame glass-panel">
+            <!-- Window Control Titlebar -->
+            <div class="app-window-header">
+                <div class="window-left-group">
+                    <div class="window-traffic-lights">
+                        <span class="light red"></span>
+                        <span class="light yellow"></span>
+                        <span class="light green"></span>
+                    </div>
+                    <div class="window-title-group">
+                        <h2 class="window-title"><i class="fa-solid fa-chart-pie" style="color:var(--accent);"></i> Performance & Mastery Intelligence</h2>
+                        <span class="window-subtitle">Verbal Active Recall Metrics, Spaced Repetition Retention & Subject Diagnostics</span>
+                    </div>
+                </div>
+                <div class="window-actions">
+                    <button class="btn btn-outline btn-sm" onclick="loadStats(); renderAnalytics(); loadRecentAttempts();">
+                        <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="showView('arena');">
+                        <i class="fa-solid fa-microphone"></i> Verbal Practice Arena
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4 Key Stat Cards Row -->
+            <div class="stats-row" style="margin-bottom:1.5rem;">
+                <div class="card stat-card glass-panel">
+                    <div class="stat-icon icon-blue"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="statMasteryRate">0%</span>
+                        <span class="stat-title">Overall Mastery Rate</span>
+                    </div>
+                </div>
+                <div class="card stat-card glass-panel">
+                    <div class="stat-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="statMasteredCount">0</span>
+                        <span class="stat-title">Mastered Questions</span>
+                    </div>
+                </div>
+                <div class="card stat-card glass-panel">
+                    <div class="stat-icon icon-amber"><i class="fa-solid fa-arrows-rotate"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="statWeakCount">0</span>
+                        <span class="stat-title">Pending Review</span>
+                    </div>
+                </div>
+                <div class="card stat-card glass-panel">
+                    <div class="stat-icon icon-purple"><i class="fa-solid fa-wave-square"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="statTotalAttempts">0</span>
+                        <span class="stat-title">Voice Answer Attempts</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts & Breakdown Grid -->
+            <div class="analytics-charts-grid" style="display:grid;grid-template-columns:1.3fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+                <!-- Subject Mastery Breakdown -->
+                <div class="card glass-panel" style="padding:1.4rem;">
+                    <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px;">
+                        <i class="fa-solid fa-chart-simple" style="color:var(--primary-light);"></i> Course Mastery Breakdown
+                    </h3>
+                    <div class="subject-progress-grid" id="subjectProgressContainer"></div>
+                </div>
+
+                <!-- Study Activity Heatmap -->
+                <div class="card glass-panel chart-card" style="padding:1.4rem;">
+                    <h4 class="chart-title" style="margin-bottom:0.75rem;display:flex;align-items:center;gap:8px;">
+                        <i class="fa-solid fa-fire" style="color:#f43f5e;"></i> Active Study Habit & Consistency
+                    </h4>
+                    <p style="font-size:0.78rem;color:var(--text-3);margin-bottom:1.2rem;">Daily verbal active recall drill frequency (Past 4 Weeks)</p>
+                    <div class="activity-heatmap" id="activityHeatmap"></div>
+                </div>
+            </div>
+
+            <!-- Recent Verbal Recall Practice Logs Table -->
+            <div class="card glass-panel" style="padding:1.4rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        <h3 style="font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:8px;">
+                            <i class="fa-solid fa-microphone-lines" style="color:var(--cyan-accent);"></i> Recent Verbal Active Recall Sessions
+                        </h3>
+                        <p style="font-size:0.78rem;color:var(--text-3);">Spoken student responses and semantic rubric evaluation results</p>
+                    </div>
+                    <span style="font-size:0.75rem;padding:3px 8px;border-radius:6px;background:rgba(99,102,241,0.15);color:var(--primary-light);font-weight:600;">
+                        Auto-Synchronized
+                    </span>
+                </div>
+                <div class="table-responsive" style="max-height:300px;overflow-y:auto;">
+                    <table class="data-table" id="attemptsTable">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Flashcard Question</th>
+                                <th>Spoken / Typed Answer</th>
+                                <th>Modality</th>
+                                <th>Semantic Score</th>
+                                <th>Evaluation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attemptsTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-3);">Loading practice logs...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</div>
+
+<!-- ============ AUTHENTICATION MODAL (LOGIN / REGISTER) ============ -->
+<div class="modal-backdrop" id="authModal" style="display: none; z-index: 99999;">
+    <div class="modal-dialog card glass-panel auth-card" style="max-width: 440px; margin: auto; border: 1px solid rgba(99,102,241,0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.7);">
+        
+        <div class="auth-brand-header" style="text-align: center; margin-bottom: 1.25rem;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; font-size: 1.6rem; margin-bottom: 0.75rem; box-shadow: 0 0 25px var(--primary-glow);">
+                <i class="fa-solid fa-brain"></i>
+            </div>
+            <h2 style="font-family: var(--font-heading); font-size: 1.45rem; color: #fff; margin-bottom: 0.25rem;">StudyBuddy</h2>
+            <p style="font-size: 0.82rem; color: var(--text-2);">Voice-Based Active Recall &amp; Universal Study Assistance</p>
+        </div>
+
+        <!-- Banner shown when NO student accounts exist in DB -->
+        <div id="noAccountsBanner" style="display: none; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 1.2rem; font-size: 0.83rem; color: #c7d2fe; display: flex; align-items: flex-start; gap: 8px;">
+            <i class="fa-solid fa-sparkles" style="color: #818cf8; margin-top: 2px;"></i>
+            <span><strong>No student accounts found.</strong> Create your student account below to get started!</span>
+        </div>
+
+        <!-- Auth Tabs (Login vs Register) -->
+        <div class="student-modal-tabs" style="display: flex; gap: 6px; margin-bottom: 1.25rem; background: rgba(15,23,42,0.8); padding: 4px; border-radius: 10px; border: 1px solid var(--border);">
+            <button type="button" class="student-tab-btn active" id="authTabLogin" onclick="switchAuthTab('login');" style="flex: 1; padding: 0.55rem; border-radius: 8px; border: none; background: var(--primary); color: #fff; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Log In</button>
+            <button type="button" class="student-tab-btn" id="authTabRegister" onclick="switchAuthTab('register');" style="flex: 1; padding: 0.55rem; border-radius: 8px; border: none; background: transparent; color: var(--text-2); font-weight: 600; font-size: 0.85rem; cursor: pointer;">Create Account</button>
+        </div>
+
+        <!-- Panel 1: Login Form -->
+        <div class="auth-panel" id="authPanelLogin">
+            <form id="authLoginForm">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="authLoginId" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.4rem;">
+                        <i class="fa-solid fa-envelope"></i> Email Address (or Student ID)
+                    </label>
+                    <input type="text" id="authLoginId" class="form-inp" placeholder="e.g. rhea@student.edu" required style="width: 100%;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="authLoginPassword" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.4rem;">
+                        <i class="fa-solid fa-lock"></i> Password
+                    </label>
+                    <input type="password" id="authLoginPassword" class="form-inp" placeholder="Enter password (default: student123)" required style="width: 100%;">
+                </div>
+                <div id="authLoginError" style="display: none; color: #f43f5e; font-size: 0.82rem; margin-bottom: 0.8rem; background: rgba(244,63,94,0.1); padding: 0.5rem; border-radius: 6px;"></div>
+                <button type="submit" class="btn btn-primary" id="btnAuthSubmitLogin" style="width: 100%; padding: 0.75rem; justify-content: center; font-size: 0.95rem;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Log In
+                </button>
+                <div style="margin-top: 0.9rem; text-align: center;">
+                    <button type="button" id="btnQuickDemoLogin" class="btn btn-ghost btn-sm" style="font-size: 0.8rem; color: #818cf8; width: 100%; border: 1px dashed rgba(99,102,241,0.4); padding: 0.5rem;">
+                        <i class="fa-solid fa-user-check"></i> Or Demo Log In (Rhea Dumagat)
+                    </button>
+                </div>
+            </form>
+            <div style="text-align: center; margin-top: 1.1rem; font-size: 0.82rem; color: var(--text-3);">
+                Don't have an account? <a href="#" onclick="switchAuthTab('register'); return false;" style="color: #818cf8; font-weight: 600;">Create Account</a>
+            </div>
+        </div>
+
+        <!-- Panel 2: Register Form (No Student ID needed) -->
+        <div class="auth-panel" id="authPanelRegister" style="display: none;">
+            <form id="authRegisterForm">
+                <div class="form-group" style="margin-bottom: 0.8rem;">
+                    <label for="authRegName" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.35rem;">
+                        <i class="fa-solid fa-user"></i> Full Name *
+                    </label>
+                    <input type="text" id="authRegName" class="form-inp" placeholder="e.g. Rhea Dumagat" required style="width: 100%;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.8rem;">
+                    <label for="authRegEmail" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.35rem;">
+                        <i class="fa-solid fa-envelope"></i> Email Address *
+                    </label>
+                    <input type="email" id="authRegEmail" class="form-inp" placeholder="e.g. rhea@student.edu" required style="width: 100%;">
+                </div>
+                <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 0.8rem;">
+                    <div class="form-group">
+                        <label for="authRegYearLevel" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.35rem;">Program / Major</label>
+                        <input type="text" id="authRegYearLevel" class="form-inp" placeholder="e.g. IT, CS, Business" value="BSIT" style="width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label for="authRegPassword" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.35rem;">Password *</label>
+                        <input type="password" id="authRegPassword" class="form-inp" placeholder="Create password" required style="width: 100%;">
+                    </div>
+                </div>
+                <div id="authRegError" style="display: none; color: #f43f5e; font-size: 0.82rem; margin-bottom: 0.8rem; background: rgba(244,63,94,0.1); padding: 0.5rem; border-radius: 6px;"></div>
+                <button type="submit" class="btn btn-primary" id="btnAuthSubmitRegister" style="width: 100%; padding: 0.75rem; justify-content: center; font-size: 0.95rem;">
+                    <i class="fa-solid fa-user-plus"></i> Create Account &amp; Start Studying
+                </button>
+            </form>
+            <div style="text-align: center; margin-top: 1.1rem; font-size: 0.82rem; color: var(--text-3);">
+                Already have an account? <a href="#" onclick="switchAuthTab('login'); return false;" style="color: #818cf8; font-weight: 600;">Log In</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ============ ADD SUBJECT MODAL (WITH REMOVE MANAGEMENT) ============ -->
+<div class="modal-overlay" id="dashSubjectModal" style="display:none;">
+    <div class="modal-box" style="max-width:480px;">
+        <div class="modal-box-header">
+            <h3><i class="fa-solid fa-folder-plus" style="color:#818cf8;"></i> Manage Course Subjects</h3>
+            <button class="modal-close" onclick="hideModal('dashSubjectModal');">&times;</button>
+        </div>
+        <form id="dashSubjectForm">
+            <div class="modal-box-body">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="dashSubjCode">Subject Code *</label>
+                        <input type="text" id="dashSubjCode" class="form-inp" placeholder="e.g. IT 104" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dashSubjColor">Badge Color</label>
+                        <select id="dashSubjColor" class="form-sel">
+                            <option value="#6366f1">Indigo (Default)</option>
+                            <option value="#3b82f6">Ocean Blue</option>
+                            <option value="#10b981">Emerald Green</option>
+                            <option value="#8b5cf6">Purple</option>
+                            <option value="#f59e0b">Amber Gold</option>
+                            <option value="#f43f5e">Rose Pink</option>
+                            <option value="#06b6d4">Cyan Glow</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="dashSubjName">Subject Name *</label>
+                    <input type="text" id="dashSubjName" class="form-inp" placeholder="e.g. Human-Computer Interaction" required>
+                </div>
+                <div class="form-group">
+                    <label for="dashSubjDesc">Description / Scope (Optional)</label>
+                    <textarea id="dashSubjDesc" class="form-ta" rows="2" placeholder="Brief course syllabus or topic coverage..."></textarea>
+                </div>
+
+                <!-- Existing Subjects List with Remove Buttons -->
+                <div style="margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+                        <span style="font-size:0.8rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">
+                            <i class="fa-solid fa-layer-group"></i> Existing Subjects & Removal
+                        </span>
+                        <span style="font-size:0.75rem;color:var(--text-3);" id="existingSubjectCount">0 subjects</span>
+                    </div>
+                    <div class="existing-subjects-list" id="existingSubjectsList" style="max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:0.4rem;"></div>
+                </div>
+            </div>
+            <div class="modal-box-footer">
+                <button type="button" class="btn-ghost-sm" onclick="hideModal('dashSubjectModal');">Cancel</button>
+                <button type="submit" class="btn-primary-sm" id="btnSaveDashSubject">
+                    <i class="fa-solid fa-plus"></i> Create Subject
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============ ADD SCHEDULE SLOT MODAL ============ -->
+<div class="modal-overlay" id="addScheduleModal" style="display:none;">
+    <div class="modal-box" style="max-width:520px;">
+        <div class="modal-box-header">
+            <h3><i class="fa-solid fa-calendar-plus" style="color:#818cf8;"></i> Add Class / Review Slot</h3>
+            <button class="modal-close" onclick="closeAddScheduleModal();">&times;</button>
+        </div>
+        <form id="addScheduleForm">
+            <div class="modal-box-body">
+                <!-- Row 1: Subject + Type -->
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="schedSubjectSelect"><i class="fa-solid fa-book"></i> Subject *</label>
+                        <select id="schedSubjectSelect" class="form-sel" required>
+                            <option value="">-- Select Subject --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedTypeSelect"><i class="fa-solid fa-tag"></i> Class Type *</label>
+                        <select id="schedTypeSelect" class="form-sel" required>
+                            <option value="Lecture">Lecture</option>
+                            <option value="Laboratory">Laboratory</option>
+                            <option value="Recitation">Recitation</option>
+                            <option value="Recall Drill">Active Recall Drill</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Row 2: Day + Period -->
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="schedDaySelect"><i class="fa-solid fa-calendar-day"></i> Day *</label>
+                        <select id="schedDaySelect" class="form-sel" required>
+                            <option value="0">Monday</option>
+                            <option value="1">Tuesday</option>
+                            <option value="2">Wednesday</option>
+                            <option value="3">Thursday</option>
+                            <option value="4">Friday</option>
+                            <option value="5">Saturday</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedPeriodSelect"><i class="fa-solid fa-clock"></i> Period *</label>
+                        <select id="schedPeriodSelect" class="form-sel" required>
+                            <option value="p1">07:30 – 09:00 AM (1st Period)</option>
+                            <option value="p2">09:00 – 10:30 AM (2nd Period)</option>
+                            <option value="p3">10:30 – 12:00 PM (3rd Period)</option>
+                            <option value="p4">01:00 – 02:30 PM (4th Period)</option>
+                            <option value="p5">02:30 – 04:00 PM (5th Period)</option>
+                            <option value="p6">04:00 – 05:30 PM (6th Period)</option>
+                            <option value="p7">05:30 – 07:00 PM (Active Recall)</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Row 3: Room + Color -->
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="schedRoomInput"><i class="fa-solid fa-location-dot"></i> Room / Location</label>
+                        <input type="text" id="schedRoomInput" class="form-inp" placeholder="e.g. Lab 1 / Room 203">
+                    </div>
+                    <div class="form-group">
+                        <label for="schedColorSelect"><i class="fa-solid fa-palette"></i> Card Color</label>
+                        <select id="schedColorSelect" class="form-sel">
+                            <option value="blue">Blue (IT 101)</option>
+                            <option value="purple">Purple (IT 102)</option>
+                            <option value="green">Green (IT 103)</option>
+                            <option value="orange">Orange (Math)</option>
+                            <option value="amber">Amber (Drill)</option>
+                            <option value="cyan">Cyan</option>
+                            <option value="rose">Rose</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="schedConflictAlert" style="display:none;color:#f59e0b;font-size:0.82rem;background:rgba(245,158,11,0.1);padding:0.5rem 0.75rem;border-radius:6px;border:1px solid rgba(245,158,11,0.2);margin-top:0.5rem;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <span id="schedConflictMsg"></span>
+                </div>
+            </div>
+            <div class="modal-box-footer">
+                <button type="button" class="btn-ghost-sm" onclick="closeAddScheduleModal();">Cancel</button>
+                <button type="submit" class="btn-primary-sm">
+                    <i class="fa-solid fa-calendar-plus"></i> Add to Timetable
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============ NOTE SCANNER MODAL (AUTO-GENERATE REVIEWER FROM LECTURE NOTES & SCANNED IMAGES) ============ -->
+<div class="modal-backdrop" id="noteScannerModal" style="display: none; z-index: 99990;">
+    <div class="modal-dialog card glass-panel" style="max-width: 720px; margin: auto; max-height: 92vh; overflow-y: auto;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #c084fc;"></i>
+                    Note Scanner &amp; Assessment Generator
+                </h3>
+                <p style="font-size: 0.8rem; color: var(--text-2); margin-top: 2px;">
+                    Analyze lecture notes, PDFs, or scanned handwritten notes. Automatically synthesizes authentic exam questions with answer keys, explanations, and source references.
+                </p>
+            </div>
+            <button class="modal-close-btn" onclick="document.getElementById('noteScannerModal').style.display='none';">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <form id="noteScannerForm">
+                <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0.85rem;">
+                    <div class="form-group">
+                        <label for="scannerSubjectSelect" style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 4px;">Subject *</label>
+                        <select id="scannerSubjectSelect" class="form-select" required style="width: 100%;">
+                            <!-- Populated with subjects -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scannerTopicTitle" style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 4px;">Topic / Chapter Title</label>
+                        <input type="text" id="scannerTopicTitle" class="form-input" placeholder="e.g. Chapter 3: Database Normalization" style="width: 100%;">
+                    </div>
+                </div>
+
+                <!-- Input Method Toggle (Paste Text or Upload Scanned Notes/File) -->
+                <div style="display: flex; gap: 8px; margin-bottom: 0.75rem;">
+                    <button type="button" class="btn btn-sm btn-primary" id="btnScannerModeText" onclick="setScannerInputMode('text');" style="flex: 1; justify-content: center;">
+                        <i class="fa-solid fa-pen-to-square"></i> Paste Lecture Notes
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline" id="btnScannerModeFile" onclick="setScannerInputMode('file');" style="flex: 1; justify-content: center;">
+                        <i class="fa-solid fa-camera"></i> Upload Scanned Note / File
+                    </button>
+                </div>
+
+                <!-- Text Mode -->
+                <div id="scannerTextSection" class="form-group" style="margin-bottom: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <label for="scannerNotesText" style="font-size: 0.82rem; font-weight: 600;">
+                            <i class="fa-solid fa-file-lines" style="color: #818cf8;"></i> Lecture Notes / Reviewer Content *
+                        </label>
+                        <span id="scannerCharCount" style="font-size: 0.72rem; color: var(--text-3);">0 characters</span>
+                    </div>
+                    <textarea id="scannerNotesText" class="form-input" rows="6" placeholder="Paste your raw lecture notes, bullet points, textbook definitions, or syllabus contents here...&#10;&#10;Example:&#10;Database normalization is the process of organizing data in a database to reduce redundancy and improve data integrity. First Normal Form (1NF) requires each field to contain a single atomic value and each record to be unique." style="width: 100%; font-family: monospace; font-size: 0.84rem; line-height: 1.45;"></textarea>
+                </div>
+
+                <!-- File / Scanned Image Mode -->
+                <div id="scannerFileSection" class="form-group" style="display: none; margin-bottom: 0.85rem;">
+                    <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">
+                        <i class="fa-solid fa-file-image" style="color: #c084fc;"></i> Upload Document or Scanned Handwritten Notes Image
+                    </label>
+                    <div class="dropzone" id="scannerFileDropzone" style="border: 2px dashed rgba(192, 132, 252, 0.45); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; background: rgba(192, 132, 252, 0.05); transition: all 0.2s;">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.8rem; color: #c084fc; margin-bottom: 0.4rem; display: block;"></i>
+                        <p style="font-size: 0.85rem; color: var(--text-1); font-weight: 600;">Drag & drop your notes file or photo here, or click to browse</p>
+                        <p style="font-size: 0.73rem; color: var(--text-3); margin-top: 3px;">Supports: Scanned Images (PNG, JPG, WEBP with OCR) &amp; Documents (PDF, DOCX, TXT)</p>
+                        <span class="file-name-chosen" id="scannerFileChosenName" style="display: inline-block; margin-top: 0.4rem; font-size: 0.8rem; color: #c084fc; font-weight: 600;">No file selected</span>
+                    </div>
+                    <input type="file" id="scannerFileInput" accept=".pdf,.docx,.doc,.txt,.md,.png,.jpg,.jpeg,.webp" style="display: none;">
+                </div>
+
+                <!-- Assessment Configuration Row -->
+                <div class="form-row-3" style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; margin-bottom: 1.15rem; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div class="form-group">
+                        <label for="scannerQuestionType" style="display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 3px; color: var(--text-2);">
+                            <i class="fa-solid fa-list-ul"></i> Question Type
+                        </label>
+                        <select id="scannerQuestionType" class="form-select" style="width: 100%; font-size: 0.82rem; padding: 6px 8px;">
+                            <option value="any" selected>Diverse Mixture (All Formats)</option>
+                            <option value="multiple_choice">Multiple Choice (4 Choices)</option>
+                            <option value="identification">Identification</option>
+                            <option value="true_false">True or False</option>
+                            <option value="fill_in_the_blanks">Fill in the Blanks</option>
+                            <option value="short_answer">Short Answer (Conceptual)</option>
+                            <option value="enumeration">Enumeration</option>
+                            <option value="application">Application-Based</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scannerDifficulty" style="display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 3px; color: var(--text-2);">
+                            <i class="fa-solid fa-gauge-high"></i> Difficulty Level
+                        </label>
+                        <select id="scannerDifficulty" class="form-select" style="width: 100%; font-size: 0.82rem; padding: 6px 8px;">
+                            <option value="easy">Easy (Recall &amp; Definitions)</option>
+                            <option value="moderate" selected>Moderate (Explain Concepts)</option>
+                            <option value="hard">Hard (Analysis &amp; Application)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scannerQuestionCount" style="display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 3px; color: var(--text-2);">
+                            <i class="fa-solid fa-hashtag"></i> Question Count
+                        </label>
+                        <select id="scannerQuestionCount" class="form-select" style="width: 100%; font-size: 0.82rem; padding: 6px 8px;">
+                            <option value="5">5 High-Yield Questions</option>
+                            <option value="8" selected>8 Standard Questions</option>
+                            <option value="12">12 Comprehensive Questions</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" id="btnStartScan" style="width: 100%; padding: 0.7rem; justify-content: center; font-size: 0.95rem; font-weight: 600;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Synthesize Authentic Assessment Questions
+                    </button>
+                </div>
+            </form>
+
+            <!-- Scanning Loading Indicator -->
+            <div id="scannerLoading" style="display: none; text-align: center; padding: 2rem 1rem;">
+                <div class="spinner" style="width: 42px; height: 42px; border: 4px solid rgba(192, 132, 252, 0.2); border-top-color: #c084fc; border-radius: 50%; margin: 0 auto 1rem; animation: spin 0.8s linear infinite;"></div>
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: #fff;">Analyzing Uploaded Material &amp; Synthesizing Questions...</h4>
+                <p style="font-size: 0.82rem; color: var(--text-2); margin-top: 4px;">Formulating direct examination questions with answer keys, explanations, and source references grounded strictly in your content.</p>
+            </div>
+
+            <!-- Scanner Results Pane -->
+            <div id="scannerResults" style="display: none; border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 8px;">
+                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-circle-check"></i> <span id="scannerSuccessCount">Generated Assessment Reviewer</span>
+                    </h4>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-ghost btn-sm" onclick="copyScannedReviewerText();" title="Copy text to clipboard">
+                            <i class="fa-solid fa-copy"></i> Copy
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="startFlashcardsFromScan();" style="border-color: #c084fc; color: #c084fc;">
+                            <i class="fa-solid fa-layer-group"></i> Study in Flashcards
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="startVoiceArenaFromScan();">
+                            <i class="fa-solid fa-microphone"></i> Practice with Voice
+                        </button>
+                    </div>
+                </div>
+
+                <div class="reviewer-preview-box" id="scannerReviewerPreview" style="background: rgba(15,23,42,0.85); border: 1px solid rgba(192,132,252,0.25); border-radius: 10px; padding: 1.1rem; max-height: 260px; overflow-y: auto; font-size: 0.83rem; line-height: 1.55; color: var(--text-1); white-space: pre-wrap; font-family: 'JetBrains Mono', monospace;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 1rem;">
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('noteScannerModal').style.display='none';">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ UPLOAD REVIEWER MODAL ============ -->
+<div class="modal-backdrop" id="uploadModal" style="display: none;">
+    <div class="modal-dialog card glass-panel" style="max-width: 580px; margin: auto; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div>
+                <h3 style="font-size:1.18rem;font-weight:700;"><i class="fa-solid fa-cloud-arrow-up" style="color:var(--primary-light);"></i> Upload Reviewer Document</h3>
+                <p style="font-size:0.78rem;color:var(--text-2);margin-top:2px;">Upload your course notes or syllabus to build grounded assessment questions.</p>
+            </div>
+            <button class="modal-close-btn" onclick="document.getElementById('uploadModal').style.display='none';">&times;</button>
+        </div>
+        <form id="uploadMaterialForm">
+            <div class="modal-body">
+                <div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0.85rem;">
+                    <div class="form-group">
+                        <label for="uploadSubject"><i class="fa-solid fa-book"></i> Course Subject *</label>
+                        <select id="uploadSubject" class="form-select" required style="width:100%;"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="uploadTitle"><i class="fa-solid fa-heading"></i> Reviewer Title *</label>
+                        <input type="text" id="uploadTitle" class="form-input" placeholder="e.g. Database Normalization &amp; Architecture" required style="width:100%;">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom:0.85rem;">
+                    <label><i class="fa-solid fa-file-arrow-up"></i> Reviewer Document or Scanned Notes</label>
+                    <div class="dropzone" id="fileDropzone" style="border:2px dashed rgba(99,102,241,0.4);border-radius:12px;padding:1.25rem;text-align:center;cursor:pointer;background:rgba(99,102,241,0.05);transition:all 0.2s;">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size:1.8rem;color:var(--primary-light);margin-bottom:0.4rem;display:block;"></i>
+                        <p style="font-size:0.85rem;color:var(--text-1);font-weight:600;">Drag & drop your notes file or photo here, or click to browse</p>
+                        <p style="font-size:0.73rem;color:var(--text-3);margin-top:3px;">Supported: PDF, Word (.docx), TXT, Scanned Notes Images (PNG/JPG/WEBP)</p>
+                        <span class="file-name-chosen" id="fileChosenName" style="display:inline-block;margin-top:0.4rem;font-size:0.8rem;color:#818cf8;font-weight:600;">No file selected</span>
+                    </div>
+                    <input type="file" id="materialFileInput" accept=".pdf,.docx,.doc,.txt,.md,.png,.jpg,.jpeg,.webp" style="display:none;">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0.85rem;">
+                    <label for="manualNotesText"><i class="fa-solid fa-pen"></i> Or Paste Notes Text Directly (Optional):</label>
+                    <textarea id="manualNotesText" class="form-textarea" rows="3" placeholder="Paste definitions, bullet points, or lecture notes here..." style="width:100%;"></textarea>
+                </div>
+
+                <!-- Assessment Synthesis Settings -->
+                <div class="form-row-3" style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;margin-bottom:0.85rem;">
+                    <div class="form-group">
+                        <label for="uploadQuestionType" style="font-size:0.75rem;font-weight:600;color:var(--text-2);">Question Format</label>
+                        <select id="uploadQuestionType" class="form-select" style="font-size:0.8rem;padding:4px 6px;">
+                            <option value="any" selected>Diverse Mixture</option>
+                            <option value="multiple_choice">Multiple Choice</option>
+                            <option value="identification">Identification</option>
+                            <option value="true_false">True or False</option>
+                            <option value="short_answer">Short Answer</option>
+                            <option value="fill_in_the_blanks">Fill in Blanks</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="uploadDifficulty" style="font-size:0.75rem;font-weight:600;color:var(--text-2);">Difficulty</label>
+                        <select id="uploadDifficulty" class="form-select" style="font-size:0.8rem;padding:4px 6px;">
+                            <option value="easy">Easy (Recall)</option>
+                            <option value="moderate" selected>Moderate</option>
+                            <option value="hard">Hard (Applied)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="uploadQuestionCount" style="font-size:0.75rem;font-weight:600;color:var(--text-2);">Count</label>
+                        <select id="uploadQuestionCount" class="form-select" style="font-size:0.8rem;padding:4px 6px;">
+                            <option value="5">5 Questions</option>
+                            <option value="8" selected>8 Questions</option>
+                            <option value="12">12 Questions</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+                <button type="button" class="btn btn-ghost" onclick="document.getElementById('uploadModal').style.display='none';">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="btnSubmitMaterial">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Process &amp; Synthesize Assessment Questions
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============ VIEW MATERIAL CONTENT MODAL ============ -->
+<div class="modal-backdrop" id="viewMaterialModal" style="display: none;">
+    <div class="modal-dialog card glass-panel" style="max-width: 650px; margin: auto;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 id="viewMaterialTitle" style="font-size:1.15rem;font-weight:700;">Reviewer Notes</h3>
+            <button class="modal-close-btn" onclick="document.getElementById('viewMaterialModal').style.display='none';">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="viewMaterialBody" style="max-height: 400px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; font-size: 0.88rem; line-height: 1.6; white-space: pre-wrap; color: var(--text-1);"></div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('viewMaterialModal').style.display='none';">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ ADD CUSTOM QUESTION MODAL ============ -->
+<div class="modal-backdrop" id="addQuestionModal" style="display: none;">
+    <div class="modal-dialog card glass-panel" style="max-width: 520px; margin: auto;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="font-size:1.15rem;font-weight:700;"><i class="fa-solid fa-plus-circle" style="color:var(--primary-light);"></i> Add Assessment Question</h3>
+            <button class="modal-close-btn" onclick="document.getElementById('addQuestionModal').style.display='none';">&times;</button>
+        </div>
+        <form id="addQuestionForm">
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom:0.8rem;">
+                    <label for="customQSubject">Course Subject *</label>
+                    <select id="customQSubject" class="form-select" required style="width:100%;"></select>
+                </div>
+                <div class="form-group" style="margin-bottom:0.8rem;">
+                    <label for="customQText">Examination Question Prompt *</label>
+                    <textarea id="customQText" class="form-textarea" rows="2" placeholder="e.g. What is the primary purpose of database normalization?" required style="width:100%;"></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom:0.8rem;">
+                    <label for="customQAnswer">Expected Correct Answer (Strictly grounded) *</label>
+                    <textarea id="customQAnswer" class="form-textarea" rows="3" placeholder="Concise, specific answer to be verified during study evaluation..." required style="width:100%;"></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom:0.8rem;">
+                    <label for="customQConcepts">Essential Key Concepts (Comma-separated)</label>
+                    <input type="text" id="customQConcepts" class="form-input" placeholder="e.g. redundancy, data integrity, atomic values" style="width:100%;">
+                </div>
+                <div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div class="form-group">
+                        <label for="customQType">Question Type</label>
+                        <select id="customQType" class="form-select" style="width:100%;">
+                            <option value="Short Answer">Short Answer</option>
+                            <option value="Multiple Choice">Multiple Choice</option>
+                            <option value="Identification">Identification</option>
+                            <option value="True or False">True or False</option>
+                            <option value="Fill in the Blanks">Fill in the Blanks</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customQDiff">Difficulty</label>
+                        <select id="customQDiff" class="form-select" style="width:100%;">
+                            <option value="easy">Easy</option>
+                            <option value="moderate" selected>Moderate</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;margin-top:1.2rem;">
+                <button type="button" class="btn btn-ghost" onclick="document.getElementById('addQuestionModal').style.display='none';">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Question</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============ VIEW QUESTION ASSESSMENT DETAIL MODAL ============ -->
+<div class="modal-backdrop" id="viewQuestionAssessmentModal" style="display: none; z-index: 99995;">
+    <div class="modal-dialog card glass-panel" style="max-width: 640px; margin: auto; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge" id="vqaSubjectBadge" style="background: rgba(99,102,241,0.2); color: #818cf8; font-weight: 700;">IT 101</span>
+                <span class="badge" id="vqaTypeBadge" style="background: rgba(6,182,212,0.2); color: #06b6d4;">Multiple Choice</span>
+                <span class="badge" id="vqaDiffBadge" style="background: rgba(16,185,129,0.2); color: #10b981;">Easy</span>
+            </div>
+            <button class="modal-close-btn" onclick="document.getElementById('viewQuestionAssessmentModal').style.display='none';">&times;</button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); font-weight: 700; display: block; margin-bottom: 4px;">Topic</span>
+                <h4 id="vqaTopic" style="font-size: 0.95rem; font-weight: 700; color: #fff;">General Concept</h4>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); font-weight: 700; display: block; margin-bottom: 4px;">Question</span>
+                <p id="vqaQuestion" style="font-size: 1.05rem; font-weight: 600; color: #fff; line-height: 1.45;"></p>
+            </div>
+            <div id="vqaChoicesContainer" style="display: none;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); font-weight: 700; display: block; margin-bottom: 6px;">Choices</span>
+                <div id="vqaChoicesList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+            <div style="background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; padding: 10px 14px; border-radius: 6px;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #10b981; font-weight: 700; display: block; margin-bottom: 4px;">Correct Answer</span>
+                <p id="vqaAnswer" style="font-size: 0.92rem; font-weight: 600; color: #fff;"></p>
+            </div>
+            <div style="background: rgba(99,102,241,0.08); border-left: 3px solid #818cf8; padding: 10px 14px; border-radius: 6px;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #818cf8; font-weight: 700; display: block; margin-bottom: 4px;">Explanation</span>
+                <p id="vqaExplanation" style="font-size: 0.85rem; color: var(--text-2); line-height: 1.5;"></p>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; color: var(--text-3);">
+                <i class="fa-solid fa-bookmark" style="color: var(--primary-light); margin-right: 4px;"></i>
+                <strong>Source Reference:</strong> <span id="vqaSourceRef">Uploaded reviewer notes</span>
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('viewQuestionAssessmentModal').style.display='none';">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ VOICE & SYSTEM SETTINGS MODAL ============ -->
+<div class="modal-backdrop" id="settingsModal" style="display: none;">
+    <div class="modal-dialog card glass-panel" style="max-width: 680px; margin: auto;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="font-size:1.15rem;font-weight:700;"><i class="fa-solid fa-headphones" style="color:var(--primary-light);"></i> Voice Reader Preferences</h3>
+            <button class="modal-close-btn" onclick="document.getElementById('settingsModal').style.display='none';">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:0.82rem;color:var(--text-2);margin-bottom:1.25rem;">
+                Choose the voice that reads your questions and feedback. Each reader is tuned for a specific study style based on student preferences.
+            </p>
+
+            <!-- ── Voice Reader Card Grid ── -->
+            <div id="voiceReaderGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:0.9rem;margin-bottom:1.5rem;">
+                <!-- Populated by JS: renderVoiceReaderGrid() -->
+            </div>
+
+            <!-- ── Custom Reader Tuner (shown only when Custom Reader is selected) ── -->
+            <div id="customReaderTuner" style="display:none;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;">
+                <h4 style="font-size:0.88rem;font-weight:700;color:#c4b5fd;margin-bottom:1rem;"><i class="fa-solid fa-sliders"></i> Custom Voice Tuner</h4>
+                <div class="form-group" style="margin-bottom:0.9rem;">
+                    <label for="voiceSelect" style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:5px;">Browser Voice:</label>
+                    <select id="voiceSelect" class="form-select" style="width:100%;"></select>
+                </div>
+                <div class="form-group" style="margin-bottom:0.9rem;">
+                    <label for="voiceRateSlider" style="font-size:0.82rem;font-weight:600;">Speed: <span id="voiceRateVal">1.0×</span></label>
+                    <input type="range" id="voiceRateSlider" min="0.7" max="1.4" step="0.05" value="1.0" class="form-range" style="width:100%;">
+                </div>
+                <div class="form-group" style="margin-bottom:0.75rem;">
+                    <label for="voicePitchSlider" style="font-size:0.82rem;font-weight:600;">Pitch: <span id="voicePitchVal">1.0</span></label>
+                    <input type="range" id="voicePitchSlider" min="0.8" max="1.3" step="0.05" value="1.0" class="form-range" style="width:100%;">
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" id="btnTestCustomVoice" style="font-size:0.8rem;">
+                    <i class="fa-solid fa-play"></i> Preview Custom Voice
+                </button>
+            </div>
+
+            <!-- ── Standard Settings ── -->
+            <div style="border-top:1px solid var(--border);padding-top:1rem;">
+                <div class="form-group" style="margin-bottom:0.9rem;">
+                    <label for="geminiApiKey" style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:5px;">
+                        <i class="fa-solid fa-key"></i> Gemini API Key (Optional)
+                    </label>
+                    <input type="password" id="geminiApiKey" class="form-input" placeholder="AIzaSy… (leave blank to use local NLP)" style="width:100%;">
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm" id="btnResetDemoData" style="font-size:0.8rem;color:#f43f5e;border:1px solid rgba(244,63,94,0.3);background:transparent;">
+                    <i class="fa-solid fa-trash-arrow-up"></i> Reset Default Demo Data
+                </button>
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;margin-top:1.2rem;">
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('settingsModal').style.display='none';">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnSaveSettings"><i class="fa-solid fa-check"></i> Save Preferences</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ ADD/EDIT TASK MODAL ============ -->
+<div class="modal-overlay" id="taskModal" style="display:none;">
+    <div class="modal-box" id="taskModalBox" style="max-width:480px;">
+        <div class="modal-box-header">
+            <h3 id="taskModalTitle"><i class="fa-solid fa-plus-circle"></i> New Task</h3>
+            <button class="modal-close" onclick="hideModal('taskModal');">&times;</button>
+        </div>
+        <form id="taskForm">
+            <div class="modal-box-body">
+                <div class="form-group">
+                    <label for="taskTitleInput">Task Title *</label>
+                    <input type="text" id="taskTitleInput" class="form-inp" placeholder="e.g. Prepare Active Recall Notes" required>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="taskSubjectInput">Subject</label>
+                        <select id="taskSubjectInput" class="form-sel"><option value="">General</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskTypeInput">Type</label>
+                        <select id="taskTypeInput" class="form-sel">
+                            <option value="study">Study Session</option>
+                            <option value="quiz">Quiz Practice</option>
+                            <option value="assignment">Assignment</option>
+                            <option value="exam">Exam</option>
+                            <option value="project">Project</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="taskDueDateInput">Due Date</label>
+                        <input type="date" id="taskDueDateInput" class="form-inp">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskPriorityInput">Priority</label>
+                        <select id="taskPriorityInput" class="form-sel">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="taskNotesInput">Notes (optional)</label>
+                    <textarea id="taskNotesInput" class="form-ta" rows="2" placeholder="Add study reminders…"></textarea>
+                </div>
+                <input type="hidden" id="taskEditId">
+            </div>
+            <div class="modal-box-footer">
+                <button type="button" class="btn-ghost-sm" onclick="hideModal('taskModal');">Cancel</button>
+                <button type="submit" class="btn-primary-sm" id="btnSaveTask"><i class="fa-solid fa-floppy-disk"></i> Save Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============ NOTIFICATIONS PANEL ============ -->
+<div class="notif-panel" id="notifPanel" style="display:none;">
+    <div class="notif-panel-header">
+        <h4>Notifications</h4>
+        <button class="btn-text-sm" id="btnMarkAllRead">Mark all read</button>
+    </div>
+    <div class="notif-list" id="notifList"></div>
+</div>
+
+<!-- ============ MULTIMODAL ASK STUDY QUESTION MODAL (VOICE & TYPING - 80% PREFERRED) ============ -->
+<div class="modal-backdrop" id="askStudyQuestionModal" style="display: none;">
+    <div class="modal-dialog card glass-panel" style="max-width: 580px; margin: auto;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="font-size:1.15rem;font-weight:700;"><i class="fa-solid fa-comments" style="color:var(--primary-light);"></i> Ask Study Question (Voice / Text)</h3>
+            <button class="modal-close-btn" onclick="closeAskStudyModal();">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:0.82rem;color:var(--text-2);margin-bottom:1rem;">
+                Ask any question grounded strictly in your uploaded course notes. You can speak into your microphone or type your question.
+            </p>
+            
+            <div class="form-group" style="margin-bottom:0.9rem;">
+                <label for="askModalSubject"><i class="fa-solid fa-layer-group"></i> Target Subject</label>
+                <select id="askModalSubject" class="form-select" style="width:100%;">
+                    <option value="all">All Uploaded Course Notes</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <label for="askQuestionInput"><i class="fa-solid fa-pen"></i> Your Question</label>
+                    <button type="button" class="btn btn-outline btn-xs" id="btnAskVoiceTrigger" onclick="triggerAskVoiceInput();" style="border-radius:20px;font-size:0.75rem;padding:3px 10px;">
+                        <i class="fa-solid fa-microphone"></i> <span id="askVoiceBtnLabel">Speak Question</span>
+                    </button>
+                </div>
+                <textarea id="askQuestionInput" class="form-textarea" rows="3" placeholder="Speak or type your study question here (e.g., 'What is the function of the ALU in IT 101?')..." style="width:100%;"></textarea>
+            </div>
+
+            <div id="askAnswerContainer" style="display:none;background:rgba(15,23,42,0.7);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:1rem;margin-top:1rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="font-size:0.8rem;font-weight:700;color:var(--primary-light);"><i class="fa-solid fa-brain"></i> Grounded Explanation:</span>
+                    <button type="button" class="btn btn-secondary btn-xs" id="btnSpeakAskAnswer" onclick="speakCurrentAskAnswer();"><i class="fa-solid fa-volume-high"></i> Listen (TTS)</button>
+                </div>
+                <p id="askAnswerText" style="font-size:0.88rem;color:var(--text-1);line-height:1.5;margin-bottom:8px;"></p>
+                <div style="font-size:0.75rem;color:var(--text-3);border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">
+                    <i class="fa-solid fa-book-bookmark"></i> Sourced from: <strong id="askAnswerSource" style="color:var(--text-2);"></strong>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;margin-top:1.2rem;">
+            <button type="button" class="btn btn-ghost" onclick="closeAskStudyModal();">Close</button>
+            <button type="button" class="btn btn-primary" id="btnSubmitAskQuestion" onclick="submitAskStudyQuestion();">
+                <i class="fa-solid fa-paper-plane"></i> Get Grounded Answer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ STUDY REMINDERS MODAL (SEVERAL TIMES A DAY - 60% PREFERRED) ============ -->
+<div class="modal-backdrop" id="studyRemindersModal" style="display: none;">
+    <div class="modal-dialog card glass-panel" style="max-width: 520px; margin: auto;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="font-size:1.15rem;font-weight:700;"><i class="fa-solid fa-bell-ring" style="color:var(--warning);"></i> Active Recall Study Reminders</h3>
+            <button class="modal-close-btn" onclick="closeRemindersModal();">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:0.82rem;color:var(--text-2);margin-bottom:1.2rem;">
+                Based on active recall retention research, <strong>60.0% of students prefer study reminders several times a day</strong> to reinforce active recall and overcome retention fatigue.
+            </p>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+                <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:8px;">Reminder Cadence</label>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <label style="display:flex;align-items:center;gap:10px;font-size:0.85rem;cursor:pointer;background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;border:1px solid var(--border);">
+                        <input type="radio" name="reminderCadence" value="several_times_a_day" checked>
+                        <div>
+                            <strong>Several Times a Day (Recommended by 60% of students)</strong>
+                            <div style="font-size:0.75rem;color:var(--text-3);">Morning (8:00 AM) • Midday (2:00 PM) • Evening (8:00 PM)</div>
+                        </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:10px;font-size:0.85rem;cursor:pointer;background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;border:1px solid var(--border);">
+                        <input type="radio" name="reminderCadence" value="once_a_day">
+                        <div>
+                            <strong>Once a Day (Daily Review Cadence)</strong>
+                            <div style="font-size:0.75rem;color:var(--text-3);">Evening reinforcement at 7:00 PM</div>
+                        </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:10px;font-size:0.85rem;cursor:pointer;background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;border:1px solid var(--border);">
+                        <input type="radio" name="reminderCadence" value="before_exams">
+                        <div>
+                            <strong>Before Scheduled Quizzes & Exams Only</strong>
+                            <div style="font-size:0.75rem;color:var(--text-3);">Alerts 2 hours before scheduled events</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:8px;padding:0.8rem 1rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-size:0.85rem;font-weight:600;color:var(--text-1);"><i class="fa-solid fa-desktop"></i> Browser Push Notifications</div>
+                    <div style="font-size:0.75rem;color:var(--text-2);">Receive reminder alerts even when in another tab</div>
+                </div>
+                <button type="button" class="btn btn-outline btn-xs" id="btnRequestNotificationPerm" onclick="requestReminderPermission();">Enable Alerts</button>
+            </div>
+
+            <div style="display:flex;gap:8px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="triggerTestReminder();" style="width:100%;">
+                    <i class="fa-solid fa-paper-plane"></i> Send Test Study Reminder Now
+                </button>
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;margin-top:1.2rem;">
+            <button type="button" class="btn btn-ghost" onclick="closeRemindersModal();">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveReminderPreferences();"><i class="fa-solid fa-check"></i> Save Reminders</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ AI SOURCE GROUNDING & VERIFICATION MODAL (86.7% CRITICAL TRUST) ============ -->
+<div class="modal-backdrop" id="sourceVerificationModal" style="display: none;">
+    <div class="modal-dialog modal-lg card glass-panel" style="max-width: 650px; margin: auto;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="font-size:1.15rem;font-weight:700;"><i class="fa-solid fa-shield-check" style="color:var(--success);"></i> AI Question Grounding Verification</h3>
+            <button class="modal-close-btn" onclick="closeSourceVerificationModal();">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;">
+                <div style="font-size:0.82rem;font-weight:700;color:var(--success);display:flex;align-items:center;gap:6px;">
+                    <i class="fa-solid fa-clipboard-check"></i> 86.7% Student Trust Metric Compliant
+                </div>
+                <p style="font-size:0.78rem;color:var(--text-2);margin:4px 0 0;">
+                    StudyBuddy strictly bounds questions to uploaded student notes. Zero hallucinations: compare the synthesized question and ideal answer against the exact source text below.
+                </p>
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;font-weight:700;">Source Document:</div>
+                <div style="font-size:0.95rem;font-weight:700;color:var(--text-1);" id="modalVerifDocTitle">IT 101 Lecture Notes</div>
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;font-weight:700;">Question in Active Recall:</div>
+                <div style="font-size:0.88rem;color:var(--text-1);background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:6px;border:1px solid var(--border);" id="modalVerifQuestion"></div>
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;font-weight:700;">Expected Reviewer Definition:</div>
+                <div style="font-size:0.85rem;color:#38bdf8;background:rgba(56,189,248,0.08);padding:8px 12px;border-radius:6px;border:1px solid rgba(56,189,248,0.2);" id="modalVerifAnswer"></div>
+            </div>
+
+            <div>
+                <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;font-weight:700;">Original Uploaded Notes Passage:</div>
+                <blockquote style="font-size:0.82rem;color:var(--text-2);background:rgba(0,0,0,0.35);border-left:3px solid var(--primary);padding:10px 14px;border-radius:6px;line-height:1.5;max-height:160px;overflow-y:auto;margin:4px 0 0;" id="modalVerifExcerpt"></blockquote>
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;margin-top:1.2rem;">
+            <button type="button" class="btn btn-primary" onclick="closeSourceVerificationModal();">Done Checking</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ PRACTICE QUIZ RESULTS SUMMARY MODAL (66.7% PREFERRED PROGRESS) ============ -->
+<div class="modal-backdrop" id="quizSummaryModal" style="display: none;">
+    <div class="modal-dialog card glass-panel" style="max-width: 550px; margin: auto;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="font-size:1.15rem;font-weight:700;"><i class="fa-solid fa-award" style="color:var(--primary-light);"></i> Practice Quiz Results</h3>
+            <button class="modal-close-btn" onclick="closeQuizSummaryModal();">&times;</button>
+        </div>
+        <div class="modal-body" style="text-align:center;">
+            <div style="width:90px;height:90px;border-radius:50%;margin:0 auto 12px;background:rgba(99,102,241,0.15);border:3px solid var(--primary);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <span id="quizScoreNumber" style="font-size:1.6rem;font-weight:800;color:var(--text-1);font-family:var(--font-heading);">0</span>
+                <span style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;">Overall Score</span>
+            </div>
+            <h4 id="quizVerdictHeading" style="font-size:1.1rem;margin-bottom:4px;color:var(--text-1);">Quiz Complete!</h4>
+            <p id="quizSummarySub" style="font-size:0.82rem;color:var(--text-2);margin-bottom:1.2rem;">Practice results recorded for spaced repetition</p>
+
+            <div id="quizQuestionsBreakdown" style="max-height:180px;overflow-y:auto;text-align:left;display:flex;flex-direction:column;gap:6px;padding:4px 0;margin-bottom:1rem;">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;margin-top:1.2rem;">
+            <button type="button" class="btn btn-outline" onclick="reviewQuizWeakQuestions();"><i class="fa-solid fa-arrows-rotate"></i> Practice Missed Items</button>
+            <button type="button" class="btn btn-primary" onclick="closeQuizSummaryModal(); showView('dashboard');">Return to Dashboard</button>
+        </div>
+<!-- ============ ADD SCHEDULE TIMETABLE SLOT MODAL ============ -->
+<div class="modal-backdrop" id="addScheduleModal" style="display: none;">
+    <div class="modal-dialog card glass-panel" style="max-width: 500px; margin: auto;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+            <h3 style="font-size:1.15rem;font-weight:700;"><i class="fa-solid fa-calendar-plus" style="color:var(--primary-light);"></i> Add Timetable Schedule Slot</h3>
+            <button class="modal-close-btn" onclick="closeAddScheduleModal();">&times;</button>
+        </div>
+        <form id="addScheduleForm">
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label for="schedSubjectSelect">Subject / Course:</label>
+                <select id="schedSubjectSelect" class="form-select" required>
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+            <div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label for="schedDaySelect">Day of Week:</label>
+                    <select id="schedDaySelect" class="form-select" required>
+                        <option value="0">Monday</option>
+                        <option value="1">Tuesday</option>
+                        <option value="2">Wednesday</option>
+                        <option value="3">Thursday</option>
+                        <option value="4">Friday</option>
+                        <option value="5">Saturday</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="schedPeriodSelect">Time Period:</label>
+                    <select id="schedPeriodSelect" class="form-select" required>
+                        <option value="p1">07:30 - 09:00 AM</option>
+                        <option value="p2">09:00 - 10:30 AM</option>
+                        <option value="p3">10:30 - 12:00 PM</option>
+                        <option value="p4">01:00 - 02:30 PM</option>
+                        <option value="p5">02:30 - 04:00 PM</option>
+                        <option value="p6">04:00 - 05:30 PM</option>
+                        <option value="p7">05:30 - 07:00 PM (Active Recall Drill)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label for="schedRoomInput">Room / Location:</label>
+                    <input type="text" id="schedRoomInput" class="form-inp" placeholder="e.g. ComLab 1, Room 203" required>
+                </div>
+                <div class="form-group">
+                    <label for="schedTypeSelect">Session Category:</label>
+                    <select id="schedTypeSelect" class="form-select">
+                        <option value="Lecture">Lecture Class</option>
+                        <option value="Laboratory">Computer Lab</option>
+                        <option value="Recall Drill">Active Recall Drill</option>
+                        <option value="Study Group">Study Group</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:1.25rem;">
+                <label for="schedColorSelect">Highlight Color:</label>
+                <select id="schedColorSelect" class="form-select">
+                    <option value="blue">Blue (IT 101 theme)</option>
+                    <option value="purple">Purple (IT 102 theme)</option>
+                    <option value="green">Green (IT 103 theme)</option>
+                    <option value="orange">Orange (Math theme)</option>
+                    <option value="amber">Amber (Active Recall)</option>
+                </select>
+            </div>
+            <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+                <button type="button" class="btn btn-ghost" onclick="closeAddScheduleModal();">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Add to Timetable</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============ MOBILE BOTTOM NAVIGATION BAR (66.7% SMARTPHONE, 60% MOBILE APP FORMAT) ============ -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <button class="mobile-nav-btn active" data-view="dashboard" onclick="showView('dashboard');">
+        <i class="fa-solid fa-grid-2"></i>
+        <span>Dashboard</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="arena" onclick="showView('arena');">
+        <i class="fa-solid fa-microphone"></i>
+        <span>Practice</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="flashcards" onclick="showView('flashcards');">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Cards</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="materials" onclick="showView('materials');">
+        <i class="fa-solid fa-book-bookmark"></i>
+        <span>Reviewers</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="questions" onclick="showView('questions');">
+        <i class="fa-solid fa-circle-question"></i>
+        <span>Bank</span>
+    </button>
+    <button class="mobile-nav-btn" data-view="schedule" onclick="showView('schedule');">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>Schedule</span>
+    </button>
+</nav>
+
+<div class="backdrop-overlay" id="backdropOverlay" style="display:none;" onclick="closeAllOpenOverlays();"></div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Scripts -->
+<script src="/static/js/voice_controller.js"></script>
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>

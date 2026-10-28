@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBuddy - Voice-Based Study Assistance for All Students</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="dark-theme">
+
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+        <div class="header-left">
+            <div class="brand-logo">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-brain"></i>
+                    <span class="pulse-dot"></span>
+                </div>
+                <div class="brand-text">
+                    <h1>StudyBuddy<span class="brand-badge">Study Assistant</span></h1>
+                    <p class="brand-subtitle">Voice-Based Active Recall &amp; Self-Assessment System</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div class="voice-status-pill" id="voiceStatusPill">
+                <span class="status-indicator" id="statusDot"></span>
+                <span class="status-text" id="statusText">Voice Ready</span>
+                <i class="fa-solid fa-microphone-lines status-icon" id="statusWaveIcon"></i>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <!-- Dashboard Link -->
+            <a href="/dashboard" class="btn btn-outline" title="Open Dashboard" style="text-decoration:none;">
+                <i class="fa-solid fa-grid-2"></i>
+                <span>Dashboard</span>
+            </a>
+            <!-- Student Account Badge -->
+            <button class="student-profile-pill" id="btnOpenStudentModal" title="Student Account Profile">
+                <div class="student-avatar" id="studentAvatarText">RD</div>
+                <div class="student-info-text">
+                    <span class="student-name" id="studentHeaderName">Rhea Dumagat</span>
+                    <span class="student-id-sub" id="studentHeaderId">Student</span>
+                </div>
+                <i class="fa-solid fa-angle-down student-pill-arrow"></i>
+            </button>
+
+            <button class="btn btn-outline" id="btnOpenAddSubjectModal" title="Add New Subject">
+                <i class="fa-solid fa-folder-plus"></i>
+                <span>Add Subject</span>
+            </button>
+            <button class="btn btn-outline" id="btnOpenUploadModal" title="Upload Reviewer Notes">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>Upload Reviewer</span>
+            </button>
+            <button class="btn btn-icon" id="btnOpenSettings" title="Voice & System Settings">
+                <i class="fa-solid fa-sliders"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Application Container -->
+    <main class="main-container">
+        
+        <!-- Tab Navigation Bar -->
+        <nav class="app-tabs">
+            <button class="tab-btn active" data-tab="tab-arena">
+                <i class="fa-solid fa-microphone-lines"></i>
+                <span>Voice Study Arena</span>
+            </button>
+            <button class="tab-btn" data-tab="tab-materials">
+                <i class="fa-solid fa-book-bookmark"></i>
+                <span>Review Materials</span>
+                <span class="tab-count" id="materialsCountBadge">0</span>
+            </button>
+            <button class="tab-btn" data-tab="tab-questions">
+                <i class="fa-solid fa-circle-question"></i>
+                <span>Question Bank</span>
+                <span class="tab-count" id="questionsCountBadge">0</span>
+            </button>
+            <button class="tab-btn" data-tab="tab-weak">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>Spaced Repetition</span>
+                <span class="tab-count warning-badge" id="weakCountBadge">0</span>
+            </button>
+            <button class="tab-btn" data-tab="tab-analytics">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Analytics & Mastery</span>
+            </button>
+        </nav>
+
+        <!-- ================= TAB 1: VOICE STUDY ARENA ================= -->
+        <section class="tab-content active" id="tab-arena">
+            <div class="arena-layout">
+                
+                <!-- Arena Control Bar -->
+                <div class="arena-controls card glass-panel">
+                    <div class="control-group">
+                        <label for="studySubjectSelect"><i class="fa-solid fa-layer-group"></i> Target Subject:</label>
+                        <select id="studySubjectSelect" class="form-select">
+                            <option value="all">All Subjects</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="studyModeSelect"><i class="fa-solid fa-bullseye"></i> Study Mode:</label>
+                        <select id="studyModeSelect" class="form-select">
+                            <option value="all">Mixed Review (Random)</option>
+                            <option value="weak">Spaced Repetition (Weak / Unmastered)</option>
+                            <option value="new">Unpracticed Questions Only</option>
+                        </select>
+                    </div>
+
+                    <div class="control-actions">
+                        <button class="btn btn-primary" id="btnStartSession">
+                            <i class="fa-solid fa-play"></i> Start Voice Session
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Arena Question & Voice Stage -->
+                <div class="arena-stage">
+
+                    <!-- Audio Wave Visualizer Canvas -->
+                    <div class="visualizer-container">
+                        <canvas id="voiceVisualizer" width="800" height="70"></canvas>
+                        <div class="visualizer-label" id="visualizerLabel">Ready to begin active recall session</div>
+                    </div>
+
+                    <!-- Current Question Card -->
+                    <div class="card question-card glass-panel" id="currentQuestionCard">
+                        <div class="q-header">
+                            <div class="q-meta">
+                                <span class="badge badge-subject" id="qSubjectBadge">IT 101</span>
+                                <span class="badge badge-type" id="qTypeBadge">Conceptual</span>
+                                <span class="badge badge-diff" id="qDiffBadge">Medium</span>
+                            </div>
+                            <div class="q-counter" id="qCounterText">Question 1 of 5</div>
+                        </div>
+
+                        <div class="q-body">
+                            <h2 class="question-text" id="qText">
+                                Select a subject and click "Start Voice Session" to begin hands-free verbal active recall.
+                            </h2>
+                        </div>
+
+                        <div class="q-actions">
+                            <button class="btn btn-secondary btn-sm" id="btnSpeakQuestion" title="Read Question Aloud">
+                                <i class="fa-solid fa-volume-high"></i> Speak Question (TTS)
+                            </button>
+                            <button class="btn btn-ghost btn-sm" id="btnSkipQuestion" title="Skip to Next Question">
+                                <i class="fa-solid fa-forward-step"></i> Skip
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Voice Interaction Area -->
+                    <div class="card interaction-card glass-panel" id="interactionCard">
+                        
+                        <!-- Interactive Mic Button with Ripples -->
+                        <div class="mic-stage">
+                            <div class="mic-ripple-ring" id="micRipple1"></div>
+                            <div class="mic-ripple-ring" id="micRipple2"></div>
+                            <button class="mic-trigger-btn" id="btnMicTrigger" title="Click to Speak Answer">
+                                <i class="fa-solid fa-microphone" id="micIcon"></i>
+                            </button>
+                        </div>
+                        <div class="mic-instruction" id="micInstruction">Click the microphone to start speaking your answer</div>
+
+                        <!-- Live Transcription Box -->
+                        <div class="transcription-container">
+                            <div class="transcription-header">
+                                <span><i class="fa-solid fa-comment-dots"></i> Speech-to-Text Transcription:</span>
+                                <button class="btn-text-action" id="btnClearTranscription"><i class="fa-solid fa-rotate-left"></i> Clear</button>
+                            </div>
+                            <div class="transcription-box" id="transcriptionDisplay" contenteditable="true" placeholder="Your spoken answer will appear here in real-time. You can also edit it manually if needed..."></div>
+                        </div>
+
+                        <!-- Submission Controls -->
+                        <div class="submit-action-bar">
+                            <button class="btn btn-success btn-lg" id="btnSubmitAnswer" disabled>
+                                <i class="fa-solid fa-check-circle"></i> Evaluate Answer
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Evaluation Feedback Card (Hidden initially) -->
+                    <div class="card feedback-card glass-panel" id="feedbackCard" style="display: none;">
+                        
+                        <!-- Interactive Verdict Banner (Correct vs Wrong) -->
+                        <div class="verdict-banner" id="verdictBanner">
+                            <div class="verdict-tag" id="verdictTag">
+                                <i class="fa-solid fa-circle-check" id="verdictIcon"></i>
+                                <span id="verdictLabel">CORRECT!</span>
+                            </div>
+                            <div class="voice-memo-box">
+                                <div class="voice-memo-header">
+                                    <span><i class="fa-solid fa-microphone-lines"></i> Spoken Voice Memo:</span>
+                                    <button class="btn btn-secondary btn-sm" id="btnSpeakVoiceMemo">
+                                        <i class="fa-solid fa-volume-high"></i> Replay Voice Memo
+                                    </button>
+                                </div>
+                                <p class="voice-memo-text" id="voiceMemoText">"Correct! Great explanation..."</p>
+                            </div>
+                        </div>
+
+                        <!-- Prominent Correct Answer Callout (Shown especially when Wrong) -->
+                        <div class="correct-answer-callout" id="correctAnswerCallout">
+                            <div class="callout-header"><i class="fa-solid fa-book-open"></i> Correct Answer from Uploaded Reviewer:</div>
+                            <div class="callout-body" id="calloutExpectedAnswer"></div>
+                        </div>
+
+                        <div class="feedback-header">
+                            <div class="score-display">
+                                <div class="score-dial" id="scoreDial">
+                                    <span class="score-number" id="scoreNumber">0</span>
+                                    <span class="score-percent">%</span>
+                                </div>
+                                <div class="score-label-group">
+                                    <h3 class="score-title" id="scoreTitle">Needs Review</h3>
+                                    <p class="score-subtitle" id="scoreSubtitle">Active recall evaluated against reviewer notes</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="feedback-body">
+                            <div class="feedback-text-box">
+                                <h4><i class="fa-solid fa-lightbulb"></i> Explanatory Feedback:</h4>
+                                <p id="feedbackTextContent">Feedback will appear here.</p>
+                            </div>
+
+                            <div class="missing-concepts-box" id="missingConceptsBox">
+                                <h4><i class="fa-solid fa-triangle-exclamation"></i> Concepts to Highlight:</h4>
+                                <div class="concept-tags" id="missingConceptsList"></div>
+                            </div>
+                        </div>
+
+                        <div class="feedback-footer">
+                            <button class="btn btn-outline" id="btnRetryQuestion">
+                                <i class="fa-solid fa-rotate"></i> Practice This Question Again
+                            </button>
+                            <button class="btn btn-primary" id="btnNextQuestion">
+                                <span>Next Question</span> <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: REVIEW MATERIALS ================= -->
+        <section class="tab-content" id="tab-materials">
+            <div class="section-header-bar">
+                <div>
+                    <h2>Course Review Materials & Notes</h2>
+                    <p class="section-desc">Upload course handouts, slide reviewers (PDF/TXT), and notes for automatic grounded question generation.</p>
+                </div>
+                <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                    <button class="btn btn-outline" id="btnTriggerAddSubjectFromMat">
+                        <i class="fa-solid fa-folder-plus"></i> Add Subject
+                    </button>
+                    <button class="btn btn-primary" id="btnTriggerUploadModal">
+                        <i class="fa-solid fa-file-circle-plus"></i> Upload New Reviewer
+                    </button>
+                </div>
+            </div>
+
+            <div class="materials-grid" id="materialsGrid">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: QUESTION BANK ================= -->
+        <section class="tab-content" id="tab-questions">
+            <div class="section-header-bar">
+                <div>
+                    <h2>Question Bank</h2>
+                    <p class="section-desc">All active recall questions synthesized from student reviewers across 1st-Year BSIT subjects.</p>
+                </div>
+                <div class="filter-controls">
+                    <select id="qbSubjectFilter" class="form-select">
+                        <option value="all">All Subjects</option>
+                    </select>
+                    <select id="qbStatusFilter" class="form-select">
+                        <option value="all">All Statuses</option>
+                        <option value="weak">Needs Practice</option>
+                        <option value="mastered">Mastered Only</option>
+                    </select>
+                    <button class="btn btn-outline" id="btnOpenAddQuestionModal">
+                        <i class="fa-solid fa-plus"></i> Add Question
+                    </button>
+                </div>
+            </div>
+
+            <div class="card glass-panel table-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Question</th>
+                                <th>Expected Source Answer</th>
+                                <th>Type</th>
+                                <th>Last Score</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="questionTableBody">
+                            <!-- Dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: SPACED REPETITION / WEAK QUEUE ================= -->
+        <section class="tab-content" id="tab-weak">
+            <div class="section-header-bar">
+                <div>
+                    <h2>Spaced Repetition Queue (Weak Topics)</h2>
+                    <p class="section-desc">Questions answered incorrectly or with incomplete explanations (< 70%) automatically queued for active recall reinforcement.</p>
+                </div>
+                <button class="btn btn-warning" id="btnPracticeAllWeak">
+                    <i class="fa-solid fa-bolt"></i> Practice All Weak Questions Now
+                </button>
+            </div>
+
+            <div class="weak-items-container" id="weakItemsList">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <!-- ================= TAB 5: ANALYTICS & MASTERY ================= -->
+        <section class="tab-content" id="tab-analytics">
+            <div class="analytics-layout">
+                
+                <!-- Stat Cards Row -->
+                <div class="stats-row">
+                    <div class="card stat-card glass-panel">
+                        <div class="stat-icon icon-blue"><i class="fa-solid fa-graduation-cap"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="statMasteryRate">0%</span>
+                            <span class="stat-title">Overall Mastery Rate</span>
+                        </div>
+                    </div>
+                    <div class="card stat-card glass-panel">
+                        <div class="stat-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="statMasteredCount">0</span>
+                            <span class="stat-title">Mastered Questions</span>
+                        </div>
+                    </div>
+                    <div class="card stat-card glass-panel">
+                        <div class="stat-icon icon-amber"><i class="fa-solid fa-arrows-rotate"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="statWeakCount">0</span>
+                            <span class="stat-title">Pending Repetition</span>
+                        </div>
+                    </div>
+                    <div class="card stat-card glass-panel">
+                        <div class="stat-icon icon-purple"><i class="fa-solid fa-wave-square"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="statTotalAttempts">0</span>
+                            <span class="stat-title">Voice Answer Attempts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subject Mastery Breakdown -->
+                <div class="card glass-panel analytics-panel">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-chart-simple"></i> Subject Mastery Breakdown</h3>
+                    </div>
+                    <div class="subject-progress-grid" id="subjectProgressContainer">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Capstone Evaluation Panel -->
+                <div class="card glass-panel evaluation-guide-panel">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-award"></i> BSIT Capstone Compliance (ISO/IEC 25010)</h3>
+                    </div>
+                    <div class="iso-grid">
+                        <div class="iso-item">
+                            <div class="iso-badge"><i class="fa-solid fa-shield-halved"></i></div>
+                            <h4>Bounded Grounding</h4>
+                            <p>Questions and answer evaluations are strictly grounded in uploaded student materials to avoid AI hallucination.</p>
+                        </div>
+                        <div class="iso-item">
+                            <div class="iso-badge"><i class="fa-solid fa-microphone"></i></div>
+                            <h4>Active Recall Verbalization</h4>
+                            <p>Hands-free speech-to-text forces students to synthesize definitions aloud, reinforcing cognitive memory pathways.</p>
+                        </div>
+                        <div class="iso-item">
+                            <div class="iso-badge"><i class="fa-solid fa-repeat"></i></div>
+                            <h4>Automated Repetition</h4>
+                            <p>Adaptive repetition prioritizes missed questions until retention is verified by the scoring rubric.</p>
+                        </div>
+                        <div class="iso-item">
+                            <div class="iso-badge"><i class="fa-solid fa-bolt"></i></div>
+                            <h4>Zero Cost Client-Side Voice</h4>
+                            <p>Leverages native Web Speech API synthesis and recognition for instant, zero-latency student interaction.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Add Subject Modal -->
+    <div class="modal-backdrop" id="addSubjectModal" style="display: none;">
+        <div class="modal-dialog card glass-panel">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-folder-plus"></i> Add New BSIT Subject</h3>
+                <button class="modal-close-btn" id="btnCloseSubjectModal">&times;</button>
+            </div>
+            <form id="addSubjectForm">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="newSubjectCode"><i class="fa-solid fa-barcode"></i> Subject Code *</label>
+                            <input type="text" id="newSubjectCode" class="form-input" placeholder="e.g. IT 104" required>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="newSubjectColor"><i class="fa-solid fa-palette"></i> Badge Color</label>
+                            <select id="newSubjectColor" class="form-select">
+                                <option value="#6366f1">Indigo (Default)</option>
+                                <option value="#3b82f6">Ocean Blue</option>
+                                <option value="#10b981">Emerald Green</option>
+                                <option value="#8b5cf6">Purple</option>
+                                <option value="#f59e0b">Amber Gold</option>
+                                <option value="#ec4899">Rose Pink</option>
+                                <option value="#06b6d4">Cyan Glow</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newSubjectName"><i class="fa-solid fa-heading"></i> Subject Name *</label>
+                        <input type="text" id="newSubjectName" class="form-input" placeholder="e.g. Human-Computer Interaction" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newSubjectDesc"><i class="fa-solid fa-align-left"></i> Description / Scope (Optional)</label>
+                        <textarea id="newSubjectDesc" class="form-textarea" rows="2" placeholder="Brief outline of syllabus or topic coverage..."></textarea>
+                    </div>
+
+                    <!-- Manage / Remove Existing Subjects -->
+                    <div class="existing-subjects-container" style="margin-top: 1.25rem; border-top: 1px solid var(--card-border); padding-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="fa-solid fa-layer-group"></i> Existing Subjects & Removal
+                            </span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);" id="existingSubjectCount">0 subjects</span>
+                        </div>
+                        <div class="existing-subjects-list" id="existingSubjectsList" style="max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 4px;">
+                            <!-- Populated with remove button -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="btnCancelAddSubject">Close</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitSubject">
+                        <i class="fa-solid fa-plus"></i> Add Subject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Upload Reviewer Modal -->
+    <div class="modal-backdrop" id="uploadModal" style="display: none;">
+        <div class="modal-dialog card glass-panel">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-file-arrow-up"></i> Upload Study Notes / Reviewer</h3>
+                <button class="modal-close-btn" id="btnCloseUploadModal">&times;</button>
+            </div>
+            <form id="uploadMaterialForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label for="uploadSubject"><i class="fa-solid fa-book"></i> BSIT Subject *</label>
+                            <button type="button" class="btn-text-action" id="btnQuickAddSubject" style="color: var(--primary-light); font-weight: 600;">
+                                <i class="fa-solid fa-plus"></i> New Subject
+                            </button>
+                        </div>
+                        <select id="uploadSubject" class="form-select" required>
+                            <!-- Dynamically loaded -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="uploadTitle"><i class="fa-solid fa-heading"></i> Reviewer Title *</label>
+                        <input type="text" id="uploadTitle" class="form-input" placeholder="e.g. Chapter 2: Computer Hardware and Memory" required>
+                    </div>
+
+                    <div class="upload-tabs">
+                        <button type="button" class="upload-tab-btn active" data-upload-mode="file">Upload Document (PDF / TXT)</button>
+                        <button type="button" class="upload-tab-btn" data-upload-mode="text">Paste Notes Directly</button>
+                    </div>
+
+                    <!-- File Upload Mode -->
+                    <div class="upload-mode-panel active" id="uploadFilePanel">
+                        <div class="file-dropzone" id="fileDropzone">
+                            <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                            <p class="dropzone-text">Drag and drop your <strong>PDF, Word (.docx), or TXT</strong> file here, or click to browse</p>
+                            <input type="file" id="materialFileInput" accept=".pdf,.docx,.doc,.txt,.md" style="display: none;">
+                            <span class="file-chosen-name" id="fileChosenName">No file selected</span>
+                        </div>
+                    </div>
+
+                    <!-- Text Paste Mode -->
+                    <div class="upload-mode-panel" id="uploadTextPanel" style="display: none;">
+                        <textarea id="materialTextInput" class="form-textarea" rows="7" placeholder="Paste your lecture notes, reviewer bullets, or syllabus definitions here..."></textarea>
+                    </div>
+
+                    <div class="auto-generation-banner">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span><strong>Automatic AI Synthesis:</strong> Active recall questions will be automatically generated and grounded directly in this uploaded document.</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="btnCancelUpload">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitMaterial">
+                        <i class="fa-solid fa-upload"></i> Process Reviewer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Student Account Modal -->
+    <div class="modal-backdrop" id="studentAccountModal" style="display: none;">
+        <div class="modal-dialog card glass-panel">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-graduate"></i> Student Profile & Account</h3>
+                <button class="modal-close-btn" id="btnCloseStudentModal">&times;</button>
+            </div>
+            <div class="student-modal-tabs">
+                <button type="button" class="student-tab-btn active" data-student-mode="profile">Active Profile</button>
+                <button type="button" class="student-tab-btn" data-student-mode="login">Switch / Login</button>
+                <button type="button" class="student-tab-btn" data-student-mode="register">Register New Student</button>
+            </div>
+
+            <!-- Profile View -->
+            <div class="student-panel active" id="panelStudentProfile">
+                <div class="student-profile-card">
+                    <div class="profile-avatar-large" id="profileLargeAvatar">RD</div>
+                    <div class="profile-details">
+                        <h3 id="profileFullName">Rhea Dumagat</h3>
+                        <p class="profile-id-badge"><i class="fa-solid fa-id-card"></i> Student ID: <strong id="profileStudentId">2026-0001</strong></p>
+                        <p class="profile-email-badge"><i class="fa-solid fa-envelope"></i> <span id="profileEmail">rhea.dumagat@student.edu</span></p>
+                        <p class="profile-year-badge"><i class="fa-solid fa-graduation-cap"></i> <span id="profileYearLevel">Student</span></p>
+                    </div>
+                </div>
+                <div class="profile-stats-row">
+                    <div class="profile-mini-stat">
+                        <span class="mini-stat-num" id="profileAttemptsCount">0</span>
+                        <span class="mini-stat-lbl">Voice Answer Attempts</span>
+                    </div>
+                    <div class="profile-mini-stat">
+                        <span class="mini-stat-num" id="profileMasteredCount">0</span>
+                        <span class="mini-stat-lbl">Mastered Concepts</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Form -->
+            <div class="student-panel" id="panelStudentLogin" style="display: none;">
+                <form id="studentLoginForm">
+                    <div class="form-group">
+                        <label for="loginIdentifier"><i class="fa-solid fa-id-card"></i> Student ID or Email</label>
+                        <input type="text" id="loginIdentifier" class="form-input" placeholder="e.g. 2026-BSIT-001 or email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword"><i class="fa-solid fa-lock"></i> Password</label>
+                        <input type="password" id="loginPassword" class="form-input" placeholder="Enter password (default: student123)" required>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fa-solid fa-right-to-bracket"></i> Login as Student</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Register Form -->
+            <div class="student-panel" id="panelStudentRegister" style="display: none;">
+                <form id="studentRegisterForm">
+                    <div class="form-group">
+                        <label for="regFullName"><i class="fa-solid fa-user"></i> Full Name *</label>
+                        <input type="text" id="regFullName" class="form-input" placeholder="e.g. Maria Santos" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail"><i class="fa-solid fa-envelope"></i> Institutional Email *</label>
+                        <input type="email" id="regEmail" class="form-input" placeholder="e.g. maria.santos@student.edu" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regYearLevel"><i class="fa-solid fa-graduation-cap"></i> Program / Major (Optional)</label>
+                        <input type="text" id="regYearLevel" class="form-input" value="Student" placeholder="e.g. IT, CS, Nursing, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword"><i class="fa-solid fa-lock"></i> Password *</label>
+                        <input type="password" id="regPassword" class="form-input" placeholder="Create a secure password" required>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fa-solid fa-user-plus"></i> Create Student Account</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" id="btnCloseStudentModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Custom Question Modal -->
+    <div class="modal-backdrop" id="addQuestionModal" style="display: none;">
+        <div class="modal-dialog card glass-panel">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-plus-circle"></i> Add Custom Study Question</h3>
+                <button class="modal-close-btn" id="btnCloseQuestionModal">&times;</button>
+            </div>
+            <form id="addQuestionForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="customQSubject">Subject *</label>
+                        <select id="customQSubject" class="form-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customQText">Question Text *</label>
+                        <textarea id="customQText" class="form-textarea" rows="3" placeholder="Enter question for verbal answer..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="customQAnswer">Expected Ideal Answer *</label>
+                        <textarea id="customQAnswer" class="form-textarea" rows="3" placeholder="Enter ideal explanation expected from student..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="customQConcepts">Key Concepts / Terms (comma separated)</label>
+                        <input type="text" id="customQConcepts" class="form-input" placeholder="e.g. CPU, Control Unit, ALU, registers">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="customQType">Question Type</label>
+                            <select id="customQType" class="form-select">
+                                <option value="conceptual">Conceptual</option>
+                                <option value="definition">Definition</option>
+                                <option value="identification">Identification</option>
+                                <option value="syntax">Code / Syntax</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="customQDiff">Difficulty</label>
+                            <select id="customQDiff" class="form-select">
+                                <option value="easy">Easy</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="btnCancelAddQuestion">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Question</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-backdrop" id="settingsModal" style="display: none;">
+        <div class="modal-dialog card glass-panel">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-sliders"></i> StudyBuddy Settings</h3>
+                <button class="modal-close-btn" id="btnCloseSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4><i class="fa-solid fa-bullhorn"></i> Voice & Audio Configuration</h4>
+                    
+                    <div class="form-group">
+                        <label for="voiceSelect">Speech Synthesis Voice (TTS)</label>
+                        <select id="voiceSelect" class="form-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="slider-header">
+                            <label for="voiceRateSlider">Speech Speed (Rate): <span id="voiceRateVal">1.0x</span></label>
+                        </div>
+                        <input type="range" id="voiceRateSlider" min="0.7" max="1.4" step="0.1" value="1.0" class="form-range">
+                    </div>
+
+                    <div class="form-group">
+                        <div class="slider-header">
+                            <label for="voicePitchSlider">Voice Pitch: <span id="voicePitchVal">1.0</span></label>
+                        </div>
+                        <input type="range" id="voicePitchSlider" min="0.8" max="1.3" step="0.1" value="1.0" class="form-range">
+                    </div>
+
+                    <div class="voice-test-row">
+                        <button class="btn btn-outline btn-sm" id="btnTestVoice">
+                            <i class="fa-solid fa-play"></i> Test Current Voice
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h4><i class="fa-solid fa-wand-magic-sparkles"></i> AI Question & Evaluation Engine</h4>
+                    <p class="settings-hint">The app includes a built-in semantic evaluator that works 100% offline. Optionally enter a Google Gemini API Key for advanced semantic feedback.</p>
+                    <div class="form-group">
+                        <label for="geminiApiKey">Gemini API Key (Optional)</label>
+                        <input type="password" id="geminiApiKey" class="form-input" placeholder="AIzaSy... (leave blank to use built-in NLP)">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h4><i class="fa-solid fa-arrows-rotate"></i> Reset Demo Curriculum</h4>
+                    <p class="settings-hint">Re-seeds default 1st-Year BSIT subjects (IT 101, IT 102, IT 103) and sample reviewers.</p>
+                    <button class="btn btn-outline-danger btn-sm" id="btnResetDemoData">
+                        <i class="fa-solid fa-trash-can"></i> Restore Default BSIT Demo Data
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnSaveSettings">Save Preferences</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviewer Content Viewer Modal -->
+    <div class="modal-backdrop" id="viewMaterialModal" style="display: none;">
+        <div class="modal-dialog modal-lg card glass-panel">
+            <div class="modal-header">
+                <h3 id="viewMaterialTitle">Reviewer Content</h3>
+                <button class="modal-close-btn" id="btnCloseViewModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre class="material-content-viewer" id="viewMaterialBody"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnGenFromViewer">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Synthesize 5 Questions From This Notes
+                </button>
+                <button type="button" class="btn btn-ghost" id="btnCloseViewModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="/static/js/voice_controller.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
